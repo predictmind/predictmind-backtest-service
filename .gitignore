@@ -1,0 +1,13 @@
+/dist
+/node_modules
+/build
+/coverage
+logs
+*.log
+npm-debug.log*
+.idea
+.vscode
+.env
+.env*.local
+.DS_Store
+*.tsbuildinfo
