@@ -211,6 +211,42 @@ describe("RuleStrategy", () => {
     expect(strat.generate(candles).every((s) => s === "HOLD")).toBe(true);
   });
 
+  it("uses the btc_trend condition (BTC-regime filter)", () => {
+    // BTC ramps up so its close ends above its short SMA (uptrend).
+    const btc = [100, 101, 102, 103, 104, 105, 106, 107];
+    const candles: Candle[] = btc.map((b, i) => ({
+      openTime: new Date(2025, 0, 1, i),
+      open: 10,
+      high: 11,
+      low: 9,
+      close: 10,
+      volume: 100,
+      btcClose: b,
+    }));
+    const strat = new RuleStrategy({
+      entry: { mode: "all", conditions: [{ type: "btc_trend", period: 3, dir: "above" }] },
+      exit: { mode: "all", conditions: [{ type: "btc_trend", period: 3, dir: "below" }] },
+    });
+    const signals = strat.generate(candles);
+    expect(signals).toContain("BUY"); // BTC uptrend -> entry allowed
+  });
+
+  it("btc_trend is false when BTC context is missing", () => {
+    const candles: Candle[] = [1, 2, 3, 4].map((cl) => ({
+      openTime: new Date(),
+      open: cl,
+      high: cl,
+      low: cl,
+      close: cl,
+      volume: 1,
+    }));
+    const strat = new RuleStrategy({
+      entry: { mode: "all", conditions: [{ type: "btc_trend", period: 2, dir: "above" }] },
+      exit: { mode: "all", conditions: [{ type: "btc_trend", period: 2, dir: "below" }] },
+    });
+    expect(strat.generate(candles).every((s) => s === "HOLD")).toBe(true);
+  });
+
   it("combines an indicator AND a pattern with mode 'all'", () => {
     const candles = candlesFromCloses([50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40]);
     const strat = new RuleStrategy({

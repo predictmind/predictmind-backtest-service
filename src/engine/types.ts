@@ -18,6 +18,8 @@ export interface Candle {
   longShortRatio?: number | null;
   /** Market-wide Fear & Greed Index (0-100) at this candle's time (optional). */
   fearGreed?: number | null;
+  /** BTC's close price at this candle's time (for BTC-regime context; optional). */
+  btcClose?: number | null;
 }
 
 /** What a strategy decides to do on a given candle. */

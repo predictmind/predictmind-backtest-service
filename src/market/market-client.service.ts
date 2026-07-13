@@ -77,6 +77,7 @@ export class MarketClientService {
     await this.attachOpenInterest(symbol, timeframe, candles);
     await this.attachLongShort(symbol, timeframe, candles);
     await this.attachFearGreed(candles);
+    await this.attachBtcContext(symbol, timeframe, candles);
     return candles;
   }
 
@@ -189,6 +190,37 @@ export class MarketClientService {
         candle.fearGreed = value;
       },
       `fear & greed index`,
+    );
+  }
+
+  /**
+   * Attach BTC's close price to each candle (BTC-regime context). For BTC itself
+   * this is just its own close; for alts we fetch BTC candles on the same
+   * timeframe and align by time. Alts tend to follow BTC, so a strategy can
+   * require "BTC is healthy" before trading an alt.
+   */
+  private async attachBtcContext(
+    symbol: string,
+    timeframe: string,
+    candles: Candle[],
+  ): Promise<void> {
+    if (symbol.toUpperCase() === "BTC") {
+      for (const candle of candles) candle.btcClose = candle.close;
+      return;
+    }
+    const url = `${this.baseUrl()}/api/v1/market/candles?symbol=BTC&timeframe=${encodeURIComponent(timeframe)}&limit=2000`;
+    await this.attachSeries(
+      url,
+      candles,
+      (raw) =>
+        (raw as RawCandle[]).map((c) => ({
+          time: new Date(c.openTime).getTime(),
+          value: Number(c.close),
+        })),
+      (candle, value) => {
+        candle.btcClose = value;
+      },
+      `BTC context for ${timeframe}`,
     );
   }
 }

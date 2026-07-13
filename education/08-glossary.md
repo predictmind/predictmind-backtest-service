@@ -44,6 +44,8 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **OI change** | Percent change of open interest over a lookback — rising = new money. |
 | **Long/short ratio** | Share of futures accounts long vs short — contrarian crowd gauge (signal only). |
 | **Fear & Greed Index** | Market-wide daily sentiment 0-100; contrarian (fear near bottoms, greed near tops). |
+| **BTC context / btc_trend** | Whether BTC is above/below its own MA; a regime filter for alt trades. |
+| **BTC dominance** | BTC's share of total crypto market cap (needs an external feed; optional). |
 | **Condition group** | A set of conditions combined with "all" or "any". |
 | **RuleStrategy** | A strategy built from a rule spec — the AI generator's output format. |
 | **Benchmark** | A known strategy we compare against (must beat Buy & Hold). |

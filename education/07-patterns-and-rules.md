@@ -235,4 +235,34 @@ Missing data → `false` (safe).
 **Verified live:** 1000 daily values imported and aligned to BTC 4h candles in a
 backtest. 35 tests green.
 
+## Update — signal #6: BTC context (added later) 🟠
+
+Alts (ETH, SOL, …) mostly **follow BTC**. If BTC is falling, most alts fall too —
+so a smart alt strategy should **only trade when BTC is healthy**. That's the BTC
+context filter.
+
+Unlike the other signals, this needs **no new data feed** — we already have BTC
+candles. So it's a **backtest-only** addition:
+
+- The market client, when backtesting an alt, also fetches **BTC candles** for the
+  same timeframe and attaches BTC's close to each candle (`candle.btcClose`). For
+  BTC itself, it's just its own close.
+- New rule condition checks whether BTC is above/below its own moving average
+  (an uptrend/downtrend regime):
+
+```jsonc
+{ "type": "btc_trend", "period": 50, "dir": "above" }   // only when BTC is in an uptrend
+```
+
+Missing BTC data → `false` (safe).
+
+**Verified live (this is a great example):** an ETH 4h strategy that buys RSI dips
+**only while BTC is above its 50-period MA** lost just **−3.7% vs ETH buy&hold
+−23.1%** over a bad window — the BTC filter kept it in cash through most of the
+drop. Exactly the point of a regime filter. 37 tests green.
+
+*(BTC **dominance** — BTC's share of total market cap — is a related idea that
+would need an external market-cap feed like CoinGecko; noted as an optional
+extension.)*
+
 Next: the [glossary](08-glossary.md).

@@ -25,6 +25,7 @@ export type Condition =
   | { type: "oi_change"; period?: number; op: Comparator; value: number }
   | { type: "long_short_ratio"; op: Comparator; value: number }
   | { type: "fear_greed"; op: Comparator; value: number }
+  | { type: "btc_trend"; period?: number; dir: "above" | "below" }
   | { type: "pattern"; name: string };
 
 export interface ConditionGroup {
@@ -146,6 +147,18 @@ function conditionSeries(cond: Condition, candles: Candle[]): boolean[] {
       return candles.map((c) =>
         c.fearGreed != null ? compare(c.fearGreed, cond.op, cond.value) : false,
       );
+    case "btc_trend": {
+      // BTC-regime filter: is BTC above (uptrend) or below its own moving
+      // average? Alts tend to follow BTC, so this gates alt trades by BTC health.
+      const btc = candles.map((c) => (c.btcClose != null ? c.btcClose : NaN));
+      const ma = sma(btc, cond.period ?? 50);
+      return candles.map((c, i) => {
+        const btcNow = c.btcClose;
+        const avg = ma[i];
+        if (btcNow == null || avg === null || Number.isNaN(avg)) return false;
+        return cond.dir === "above" ? btcNow > avg : btcNow < avg;
+      });
+    }
     case "pattern":
       return detectPattern(cond.name, candles);
     default:
