@@ -98,23 +98,27 @@ export function macd(
   });
 
   // Signal line = EMA of the (non-null) MACD line, realigned to full length.
+  // The MACD line is null until both EMAs exist, then contiguous, so the k-th
+  // defined value maps to index (firstIdx + k). We build with push (no computed
+  // property writes) to keep it clear and static-analysis clean.
+  const firstIdx = macdLine.findIndex((v) => v !== null);
   const defined = macdLine.filter((v): v is number => v !== null);
   const signalDefined = ema(defined, signalPeriod);
-  const firstIdx = macdLine.findIndex((v) => v !== null);
-  const signal: (number | null)[] = closes.map(() => null);
-  const histogram: (number | null)[] = closes.map(() => null);
-  const outSignal = [...signal];
-  const outHist = [...histogram];
-  if (firstIdx >= 0) {
-    for (let j = 0; j < signalDefined.length; j++) {
-      const idx = firstIdx + j;
-      const sig = signalDefined[j];
-      outSignal[idx] = sig;
-      const m = macdLine[idx];
-      outHist[idx] = sig !== null && m !== null ? m - sig : null;
+
+  const signal: (number | null)[] = [];
+  const histogram: (number | null)[] = [];
+  for (let i = 0; i < closes.length; i++) {
+    if (firstIdx < 0 || i < firstIdx) {
+      signal.push(null);
+      histogram.push(null);
+      continue;
     }
+    const sig = signalDefined[i - firstIdx] ?? null;
+    signal.push(sig);
+    const m = macdLine[i];
+    histogram.push(sig !== null && m !== null ? m - sig : null);
   }
-  return { macd: macdLine, signal: outSignal, histogram: outHist };
+  return { macd: macdLine, signal, histogram };
 }
 
 /** Bollinger Bands: a moving average with bands `mult` std-devs above/below. */
