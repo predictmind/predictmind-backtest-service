@@ -1,0 +1,41 @@
+# 7. Glossary (the dictionary)
+
+Backtesting words used in these notes. General coding words (server, API, database,
+Prisma, module, controller, service, DTO, decorator, Docker, port, CI, east-west
+call, fetch, timeout) are defined in the auth, market, and news glossaries:
+- [auth glossary](../../predictmind-auth-service/education/09-glossary.md)
+- [market glossary](../../predictmind-market-service/education/07-glossary.md)
+- [news glossary](../../predictmind-news-service/education/08-glossary.md)
+
+| Word | Simple meaning |
+| --- | --- |
+| **Backtest** | Replaying a strategy over past prices to see how it would have done. |
+| **Strategy** | A rule that outputs BUY/SELL/HOLD for each candle. |
+| **Signal** | One BUY/SELL/HOLD decision on a candle. |
+| **Spot** | Buying a coin with cash and later selling it (no shorting/leverage). |
+| **Long / flat** | Holding the coin / holding cash. Our only two states. |
+| **Trade** | One completed buy-then-sell. |
+| **Equity curve** | Your total money plotted over time. |
+| **Mark-to-market** | Valuing what you hold at the current price, each candle. |
+| **Fee** | Small cost per buy/sell (we use 0.1% per side). |
+| **SMA / EMA** | Simple / Exponential Moving Average (trend smoothers). |
+| **RSI** | 0–100 momentum gauge; <30 oversold, >70 overbought. |
+| **Crossover** | When a fast average crosses above/below a slow one. |
+| **Mean reversion** | Betting overshoots snap back (RSI strategy). |
+| **Trend following** | Betting moves continue (crossover strategies). |
+| **Benchmark** | A known strategy we compare against (must beat Buy & Hold). |
+| **Net profit %** | Overall money gained/lost. |
+| **Win rate** | Share of trades that made money. |
+| **Profit factor** | Total wins ÷ total losses (>1 is profitable). |
+| **Drawdown** | Peak-to-valley drop in equity — the "pain" measure. |
+| **Sharpe ratio** | Return per unit of total wobble (risk-adjusted). |
+| **Sortino ratio** | Like Sharpe but only counts downside wobble. |
+| **Expectancy** | Average profit expected per trade. |
+| **Annualise** | Scale a short-timeframe number to a yearly basis for fair comparison. |
+| **Look-ahead bias** | Cheating by using future data in a past decision — to avoid. |
+| **Out-of-sample** | Data a strategy was NOT tuned on — the real test. |
+| **Overfitting** | A strategy that memorised the past and fails on new data. |
+| **Pure function** | Output depends only on input; no I/O — easy to test. |
+| **Nested create (Prisma)** | Saving a row and its related rows in one operation. |
+
+Back to the [index](README.md).
