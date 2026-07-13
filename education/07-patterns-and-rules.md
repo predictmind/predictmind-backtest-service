@@ -151,4 +151,27 @@ price signal.
 beat Buy & Hold (−14.9% vs −17.2%) over a falling market — it sidestepped some of
 the drop. (Kept only because it helps; that's the data-first rule.)
 
+## Update — signal #2: funding rate (added later) 💸
+
+Next from the roadmap: **funding rate** — a crowd-positioning gauge from perpetual
+futures (positive = crowd heavily long; negative = heavily short). We use it as a
+**signal only** (we still trade spot). The market service captures funding history;
+here we consume it.
+
+- The `Candle` type gained an optional `fundingRate`. Funding updates every ~8h,
+  so the market client **aligns** it to each candle (the most recent funding at or
+  before the candle's time, via a two-pointer walk) and best-effort leaves it
+  `null` if funding can't be fetched.
+- New rule condition:
+
+```jsonc
+{ "type": "funding", "op": "lt", "value": 0.00005 }
+```
+
+It compares the candle's aligned funding rate to a value (e.g. "only buy when the
+crowd isn't over-leveraged long"). Missing funding → condition `false` (safe).
+
+**Verified live:** funding imported for BTC, and a funding-based rule backtest on
+BTC 4h ran with funding correctly aligned to candles. 29 tests green.
+
 Next: the [glossary](08-glossary.md).

@@ -21,6 +21,7 @@ export type Condition =
   | { type: "macd"; fast?: number; slow?: number; signal?: number; op: "gt" | "lt" }
   | { type: "bollinger"; period?: number; mult?: number; side: "below_lower" | "above_upper" }
   | { type: "order_flow"; period?: number; op: Comparator; value: number }
+  | { type: "funding"; op: Comparator; value: number }
   | { type: "pattern"; name: string };
 
 export interface ConditionGroup {
@@ -112,6 +113,11 @@ function conditionSeries(cond: Condition, candles: Candle[]): boolean[] {
       const series = cond.period && cond.period > 1 ? smoothRatio(ratios, cond.period) : ratios;
       return series.map((v) => (v === null ? false : compare(v, cond.op, cond.value)));
     }
+    case "funding":
+      // Perp funding rate (signal only). e.g. funding > 0.0005 = crowded longs.
+      return candles.map((c) =>
+        c.fundingRate != null ? compare(c.fundingRate, cond.op, cond.value) : false,
+      );
     case "pattern":
       return detectPattern(cond.name, candles);
     default:

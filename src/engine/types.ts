@@ -10,6 +10,8 @@ export interface Candle {
   takerBuyVolume?: number | null;
   /** Number of trades in the candle (optional). */
   trades?: number | null;
+  /** Perp funding rate active at this candle's time (optional; signal only). */
+  fundingRate?: number | null;
 }
 
 /** What a strategy decides to do on a given candle. */
