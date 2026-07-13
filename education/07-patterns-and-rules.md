@@ -265,4 +265,27 @@ drop. Exactly the point of a regime filter. 37 tests green.
 would need an external market-cap feed like CoinGecko; noted as an optional
 extension.)*
 
+## Update — signal #7: on-chain metrics (added later) ⛓️
+
+**On-chain** data comes from the blockchain itself (not exchanges):
+
+- **Active addresses** — daily count of active wallets (network usage/adoption).
+- **MVRV** — market cap ÷ realized cap (a valuation ratio).
+
+The market service captures these from the free Coin Metrics community API. The
+`Candle` gained optional `activeAddresses` and `mvrv`, aligned daily. Two new rule
+conditions:
+
+```jsonc
+{ "type": "active_addr_change", "period": 7, "op": "gt", "value": 10 }  // usage growing >10%
+{ "type": "mvrv", "op": "gt", "value": 3.5 }                            // over-valued -> caution
+```
+
+**Honest note:** **MVRV needs realized cap, which is *not* on the free tier** — so
+`mvrv` stays `null` unless a paid source is configured later (the condition is
+future-ready). Active addresses **are** free and working.
+
+**Verified live:** BTC 1d strategy on active-address growth lost **−22.5% vs
+buy&hold −42.8%** in-sample. 40 tests green.
+
 Next: the [glossary](08-glossary.md).

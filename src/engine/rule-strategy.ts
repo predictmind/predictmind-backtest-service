@@ -26,6 +26,8 @@ export type Condition =
   | { type: "long_short_ratio"; op: Comparator; value: number }
   | { type: "fear_greed"; op: Comparator; value: number }
   | { type: "btc_trend"; period?: number; dir: "above" | "below" }
+  | { type: "mvrv"; op: Comparator; value: number }
+  | { type: "active_addr_change"; period?: number; op: Comparator; value: number }
   | { type: "pattern"; name: string };
 
 export interface ConditionGroup {
@@ -157,6 +159,24 @@ function conditionSeries(cond: Condition, candles: Candle[]): boolean[] {
         const avg = ma[i];
         if (btcNow == null || avg === null || Number.isNaN(avg)) return false;
         return cond.dir === "above" ? btcNow > avg : btcNow < avg;
+      });
+    }
+    case "mvrv":
+      // On-chain valuation (market cap / realized cap). High = lots of unrealised
+      // profit (top risk); < 1 = underwater (bottom zone).
+      return candles.map((c) =>
+        c.mvrv != null ? compare(c.mvrv, cond.op, cond.value) : false,
+      );
+    case "active_addr_change": {
+      // Percent change in on-chain active addresses over `period` candles —
+      // rising = growing network usage.
+      const period = cond.period && cond.period > 0 ? cond.period : 1;
+      return candles.map((c, i) => {
+        if (i < period) return false;
+        const now = c.activeAddresses;
+        const prev = candles[i - period].activeAddresses;
+        if (now == null || prev == null || prev === 0) return false;
+        return compare(((now - prev) / prev) * 100, cond.op, cond.value);
       });
     }
     case "pattern":

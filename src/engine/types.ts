@@ -20,6 +20,10 @@ export interface Candle {
   fearGreed?: number | null;
   /** BTC's close price at this candle's time (for BTC-regime context; optional). */
   btcClose?: number | null;
+  /** On-chain active addresses at this candle's time (optional). */
+  activeAddresses?: number | null;
+  /** On-chain MVRV ratio (market cap / realized cap) at this candle's time (optional). */
+  mvrv?: number | null;
 }
 
 /** What a strategy decides to do on a given candle. */

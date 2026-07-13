@@ -78,6 +78,7 @@ export class MarketClientService {
     await this.attachLongShort(symbol, timeframe, candles);
     await this.attachFearGreed(candles);
     await this.attachBtcContext(symbol, timeframe, candles);
+    await this.attachOnChain(symbol, candles);
     return candles;
   }
 
@@ -222,5 +223,40 @@ export class MarketClientService {
       },
       `BTC context for ${timeframe}`,
     );
+  }
+
+  /**
+   * Attach daily on-chain metrics (active addresses + MVRV) to each candle. Two
+   * metrics come from one fetch, so this aligns them together (two-pointer walk).
+   * Best-effort: a fetch failure leaves both null.
+   */
+  private async attachOnChain(symbol: string, candles: Candle[]): Promise<void> {
+    if (candles.length === 0) return;
+    const url = `${this.baseUrl()}/api/v1/market/onchain?symbol=${encodeURIComponent(symbol)}&limit=3000`;
+    let raw: { activeAddresses: number | null; mvrv: string | null; timestamp: string }[];
+    try {
+      raw = await this.getJson(url);
+    } catch {
+      this.logger.warn(`No on-chain data for ${symbol}; leaving it null`);
+      return;
+    }
+    const points = raw
+      .map((m) => ({
+        time: new Date(m.timestamp).getTime(),
+        activeAddresses: m.activeAddresses,
+        mvrv: m.mvrv != null ? Number(m.mvrv) : null,
+      }))
+      .sort((a, b) => a.time - b.time);
+    if (points.length === 0) return;
+
+    let p = 0;
+    for (const candle of candles) {
+      const t = candle.openTime.getTime();
+      while (p + 1 < points.length && points[p + 1].time <= t) p++;
+      if (points[p].time <= t) {
+        candle.activeAddresses = points[p].activeAddresses;
+        candle.mvrv = points[p].mvrv;
+      }
+    }
   }
 }

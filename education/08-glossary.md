@@ -45,6 +45,9 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Long/short ratio** | Share of futures accounts long vs short — contrarian crowd gauge (signal only). |
 | **Fear & Greed Index** | Market-wide daily sentiment 0-100; contrarian (fear near bottoms, greed near tops). |
 | **BTC context / btc_trend** | Whether BTC is above/below its own MA; a regime filter for alt trades. |
+| **On-chain** | Blockchain-native data (active addresses, MVRV). |
+| **Active addresses** | Daily active wallets — network usage; `active_addr_change` = its % change. |
+| **MVRV** | Market cap ÷ realized cap valuation ratio (needs paid data — condition is future-ready). |
 | **BTC dominance** | BTC's share of total crypto market cap (needs an external feed; optional). |
 | **Condition group** | A set of conditions combined with "all" or "any". |
 | **RuleStrategy** | A strategy built from a rule spec — the AI generator's output format. |
