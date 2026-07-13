@@ -70,8 +70,11 @@ export function runBacktest(
       makeTrade(entryTime, entryPrice, last.openTime, last.close, entryCost, proceeds, candles.length - 1 - entryIndex),
     );
     cash = proceeds;
-    units = 0;
-    equityCurve[equityCurve.length - 1] = cash;
+    // Replace the last mark-to-market point with the realised cash value.
+    if (equityCurve.length > 0) {
+      equityCurve.pop();
+      equityCurve.push(cash);
+    }
   }
 
   return { trades, equityCurve, finalEquity: cash, initialCapital };
