@@ -125,21 +125,38 @@ export type PatternName =
   | "morning_star"
   | "evening_star";
 
-const DETECTORS: Record<PatternName, (candles: Candle[]) => boolean[]> = {
-  doji,
-  hammer,
-  shooting_star: shootingStar,
-  bullish_engulfing: bullishEngulfing,
-  bearish_engulfing: bearishEngulfing,
-  morning_star: morningStar,
-  evening_star: eveningStar,
-};
+export const PATTERN_NAMES: PatternName[] = [
+  "doji",
+  "hammer",
+  "shooting_star",
+  "bullish_engulfing",
+  "bearish_engulfing",
+  "morning_star",
+  "evening_star",
+];
 
-export const PATTERN_NAMES = Object.keys(DETECTORS) as PatternName[];
-
-/** Detect a pattern by name across the whole candle series. */
+/**
+ * Detect a pattern by name across the whole candle series.
+ * Uses an explicit switch (not a dynamic `map[name]()` call) so a user-supplied
+ * name can never dispatch to an unexpected/inherited function.
+ */
 export function detectPattern(name: string, candles: Candle[]): boolean[] {
-  const detector = DETECTORS[name as PatternName];
-  if (!detector) throw new Error(`Unknown pattern: ${name}`);
-  return detector(candles);
+  switch (name) {
+    case "doji":
+      return doji(candles);
+    case "hammer":
+      return hammer(candles);
+    case "shooting_star":
+      return shootingStar(candles);
+    case "bullish_engulfing":
+      return bullishEngulfing(candles);
+    case "bearish_engulfing":
+      return bearishEngulfing(candles);
+    case "morning_star":
+      return morningStar(candles);
+    case "evening_star":
+      return eveningStar(candles);
+    default:
+      throw new Error(`Unknown pattern: ${name}`);
+  }
 }
