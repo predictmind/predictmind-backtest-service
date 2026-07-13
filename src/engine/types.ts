@@ -14,6 +14,8 @@ export interface Candle {
   fundingRate?: number | null;
   /** Perp open interest at this candle's time (optional; signal only). */
   openInterest?: number | null;
+  /** Global long/short account ratio at this candle's time (optional; signal only). */
+  longShortRatio?: number | null;
 }
 
 /** What a strategy decides to do on a given candle. */

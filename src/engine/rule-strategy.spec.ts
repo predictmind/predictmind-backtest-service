@@ -139,6 +139,42 @@ describe("RuleStrategy", () => {
     expect(strat.generate(candles).every((s) => s === "HOLD")).toBe(true);
   });
 
+  it("uses the long_short_ratio condition (contrarian crowd positioning)", () => {
+    const lsr = [0.9, 1.0, 2.5, 2.6]; // crowd flips heavily long
+    const candles: Candle[] = lsr.map((r) => ({
+      openTime: new Date(),
+      open: 50,
+      high: 51,
+      low: 49,
+      close: 50,
+      volume: 100,
+      longShortRatio: r,
+    }));
+    const strat = new RuleStrategy({
+      entry: { mode: "all", conditions: [{ type: "long_short_ratio", op: "lt", value: 1 }] },
+      exit: { mode: "all", conditions: [{ type: "long_short_ratio", op: "gt", value: 2 }] },
+    });
+    const signals = strat.generate(candles);
+    expect(signals[0]).toBe("BUY"); // ratio 0.9 < 1
+    expect(signals[2]).toBe("SELL"); // ratio 2.5 > 2 (crowd too long)
+  });
+
+  it("long_short_ratio is false when data is missing", () => {
+    const candles: Candle[] = [1, 2].map((cl) => ({
+      openTime: new Date(),
+      open: cl,
+      high: cl,
+      low: cl,
+      close: cl,
+      volume: 1,
+    }));
+    const strat = new RuleStrategy({
+      entry: { mode: "all", conditions: [{ type: "long_short_ratio", op: "lt", value: 1 }] },
+      exit: { mode: "all", conditions: [{ type: "long_short_ratio", op: "gt", value: 2 }] },
+    });
+    expect(strat.generate(candles).every((s) => s === "HOLD")).toBe(true);
+  });
+
   it("combines an indicator AND a pattern with mode 'all'", () => {
     const candles = candlesFromCloses([50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40]);
     const strat = new RuleStrategy({

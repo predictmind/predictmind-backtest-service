@@ -23,6 +23,7 @@ export type Condition =
   | { type: "order_flow"; period?: number; op: Comparator; value: number }
   | { type: "funding"; op: Comparator; value: number }
   | { type: "oi_change"; period?: number; op: Comparator; value: number }
+  | { type: "long_short_ratio"; op: Comparator; value: number }
   | { type: "pattern"; name: string };
 
 export interface ConditionGroup {
@@ -132,6 +133,12 @@ function conditionSeries(cond: Condition, candles: Candle[]): boolean[] {
         return compare(changePct, cond.op, cond.value);
       });
     }
+    case "long_short_ratio":
+      // Crowd positioning (signal only). e.g. ratio > 2 = crowd heavily long
+      // (contrarian caution); < 1 = more accounts short.
+      return candles.map((c) =>
+        c.longShortRatio != null ? compare(c.longShortRatio, cond.op, cond.value) : false,
+      );
     case "pattern":
       return detectPattern(cond.name, candles);
     default:

@@ -196,4 +196,24 @@ Missing OI → condition `false` (safe).
 −2.0% with a 77% win rate** in-sample. Promising — but per the methodology it must
 still beat benchmarks **out-of-sample** before we rely on it. 31 tests green.
 
+## Update — signal #4: long/short ratio (added later) 👥
+
+The **long/short ratio** is the share of futures accounts long vs short — mostly a
+**contrarian** gauge (when everyone's long, a pullback often follows). Signal only.
+
+- The market service captures it; the client aligns it to candles via the same
+  `attachSeries` helper; the `Candle` gained optional `longShortRatio`.
+- New rule condition:
+
+```jsonc
+{ "type": "long_short_ratio", "op": "gt", "value": 2 }   // crowd very long -> caution
+```
+
+Missing data → `false` (safe). **Liquidations** (the roadmap's paired item) are
+**deferred** — historical liquidation data isn't freely available from Binance
+REST (needs a live websocket or paid source).
+
+**Verified live:** long/short ratio imported for BTC and aligned to candles in a
+backtest. 33 tests green.
+
 Next: the [glossary](08-glossary.md).

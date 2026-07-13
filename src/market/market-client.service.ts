@@ -75,6 +75,7 @@ export class MarketClientService {
 
     await this.attachFunding(symbol, candles);
     await this.attachOpenInterest(symbol, timeframe, candles);
+    await this.attachLongShort(symbol, timeframe, candles);
     return candles;
   }
 
@@ -147,6 +148,28 @@ export class MarketClientService {
         candle.openInterest = value;
       },
       `open interest for ${symbol} ${timeframe}`,
+    );
+  }
+
+  /** Global long/short account ratio is per timeframe; align it to each candle. */
+  private attachLongShort(
+    symbol: string,
+    timeframe: string,
+    candles: Candle[],
+  ): Promise<void> {
+    const url = `${this.baseUrl()}/api/v1/market/lsr?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&limit=2000`;
+    return this.attachSeries(
+      url,
+      candles,
+      (raw) =>
+        (raw as { longShortRatio: string; timestamp: string }[]).map((r) => ({
+          time: new Date(r.timestamp).getTime(),
+          value: Number(r.longShortRatio),
+        })),
+      (candle, value) => {
+        candle.longShortRatio = value;
+      },
+      `long/short ratio for ${symbol} ${timeframe}`,
     );
   }
 }
