@@ -20,6 +20,7 @@ export type Condition =
   | { type: "ma"; kind: "sma" | "ema"; fast: number; slow: number; op: "gt" | "lt" }
   | { type: "macd"; fast?: number; slow?: number; signal?: number; op: "gt" | "lt" }
   | { type: "bollinger"; period?: number; mult?: number; side: "below_lower" | "above_upper" }
+  | { type: "order_flow"; period?: number; op: Comparator; value: number }
   | { type: "pattern"; name: string };
 
 export interface ConditionGroup {
@@ -43,6 +44,20 @@ function compare(a: number, op: Comparator, b: number): boolean {
     case "gte":
       return a >= b;
   }
+}
+
+/** Rolling mean of a nullable series; a window with any null yields null. */
+function smoothRatio(values: (number | null)[], period: number): (number | null)[] {
+  return values.map((_, i) => {
+    if (i < period - 1) return null;
+    let sum = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      const v = values[j];
+      if (v === null) return null;
+      sum += v;
+    }
+    return sum / period;
+  });
 }
 
 /** Evaluate one condition across the whole series -> a boolean per candle. */
@@ -87,6 +102,15 @@ function conditionSeries(cond: Condition, candles: Candle[]): boolean[] {
         if (upper === null || lower === null) return false;
         return cond.side === "below_lower" ? c.close < lower : c.close > upper;
       });
+    }
+    case "order_flow": {
+      // Taker buy ratio: share of a candle's volume bought by aggressive takers
+      // (>0.5 = net buying pressure). Optionally smoothed over `period` candles.
+      const ratios = candles.map((c) =>
+        c.takerBuyVolume != null && c.volume > 0 ? c.takerBuyVolume / c.volume : null,
+      );
+      const series = cond.period && cond.period > 1 ? smoothRatio(ratios, cond.period) : ratios;
+      return series.map((v) => (v === null ? false : compare(v, cond.op, cond.value)));
     }
     case "pattern":
       return detectPattern(cond.name, candles);

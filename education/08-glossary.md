@@ -4,7 +4,7 @@ Backtesting words used in these notes. General coding words (server, API, databa
 Prisma, module, controller, service, DTO, decorator, Docker, port, CI, east-west
 call, fetch, timeout) are defined in the auth, market, and news glossaries:
 - [auth glossary](../../predictmind-auth-service/education/09-glossary.md)
-- [market glossary](../../predictmind-market-service/education/07-glossary.md)
+- [market glossary](../../predictmind-market-service/education/08-glossary.md)
 - [news glossary](../../predictmind-news-service/education/08-glossary.md)
 
 | Word | Simple meaning |
@@ -35,6 +35,9 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Engulfing** | A candle whose body wraps the previous one (bullish/bearish). |
 | **Morning / evening star** | Three-candle bullish / bearish reversal patterns. |
 | **Rule spec** | JSON describing entry/exit conditions (indicators + patterns). |
+| **Order-flow** | Who's aggressive: volume bought by takers vs total volume. |
+| **Taker buy volume** | The part of a candle's volume from aggressive market buys. |
+| **Buy ratio** | takerBuyVolume ÷ volume (>0.5 = net buying pressure). |
 | **Condition group** | A set of conditions combined with "all" or "any". |
 | **RuleStrategy** | A strategy built from a rule spec — the AI generator's output format. |
 | **Benchmark** | A known strategy we compare against (must beat Buy & Hold). |

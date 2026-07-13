@@ -30,6 +30,43 @@ describe("RuleStrategy", () => {
     expect(signals).toContain("BUY");
   });
 
+  it("uses the order-flow (taker buy pressure) condition", () => {
+    // Rising prices with strong taker buying (ratio 0.8), then weak (0.2).
+    const candles: Candle[] = [100, 101, 102, 103, 104, 103, 102, 101].map((cl, i) => ({
+      openTime: new Date(),
+      open: cl,
+      high: cl + 1,
+      low: cl - 1,
+      close: cl,
+      volume: 100,
+      takerBuyVolume: i < 5 ? 80 : 20,
+      trades: 10,
+    }));
+    const strat = new RuleStrategy({
+      entry: { mode: "all", conditions: [{ type: "order_flow", op: "gt", value: 0.6 }] },
+      exit: { mode: "all", conditions: [{ type: "order_flow", op: "lt", value: 0.4 }] },
+    });
+    const signals = strat.generate(candles);
+    expect(signals.slice(0, 5)).toContain("BUY"); // strong buying window
+    expect(signals.slice(5)).toContain("SELL"); // weak buying window
+  });
+
+  it("order-flow condition is false when taker data is missing", () => {
+    const candles: Candle[] = [1, 2, 3].map((cl) => ({
+      openTime: new Date(),
+      open: cl,
+      high: cl,
+      low: cl,
+      close: cl,
+      volume: 10,
+    }));
+    const strat = new RuleStrategy({
+      entry: { mode: "all", conditions: [{ type: "order_flow", op: "gt", value: 0.5 }] },
+      exit: { mode: "all", conditions: [{ type: "order_flow", op: "lt", value: 0.5 }] },
+    });
+    expect(strat.generate(candles).every((s) => s === "HOLD")).toBe(true);
+  });
+
   it("combines an indicator AND a pattern with mode 'all'", () => {
     const candles = candlesFromCloses([50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40]);
     const strat = new RuleStrategy({

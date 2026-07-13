@@ -121,4 +121,34 @@ spec is stored (in the backtest's `params`) so every run is reproducible.
 Now strategies are built from **indicators AND patterns** — real data and
 calculations, exactly as the methodology requires.
 
+## Update — signal #1: order-flow (added later) 🌊
+
+After this lesson was first written, we added the **first "extra signal"** from the
+precision roadmap (docs 07 §16.6): **order-flow**, i.e. how much of each candle's
+volume was **bought by aggressive takers**. It's a new condition type in the same
+rule engine — nothing above changed, this is an addition.
+
+- The market service now captures Binance's **taker buy volume** on every candle
+  (it was always in the data; we just started saving it). See the market service's
+  order-flow lesson.
+- The engine's `Candle` type gained optional `takerBuyVolume` / `trades` fields, and
+  the market client reads them.
+- New rule condition:
+
+```jsonc
+{ "type": "order_flow", "period": 3, "op": "gt", "value": 0.55 }
+```
+
+It computes **buy ratio = takerBuyVolume / volume** (0–1; above 0.5 = net buying),
+optionally **smoothed** over `period` candles, and compares it to `value`. If a
+candle has no taker data (older imports), the condition is simply `false` — safe.
+
+Why it's valuable: patterns and indicators read *price*; order-flow reads *who is
+pushing* — aggressive buyers vs sellers. It often confirms or warns against a
+price signal.
+
+**Verified live:** an order-flow-only rule on 500 BTC 4h candles ran 31 trades and
+beat Buy & Hold (−14.9% vs −17.2%) over a falling market — it sidestepped some of
+the drop. (Kept only because it helps; that's the data-first rule.)
+
 Next: the [glossary](08-glossary.md).

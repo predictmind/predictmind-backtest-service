@@ -10,6 +10,8 @@ interface RawCandle {
   low: string;
   close: string;
   volume: string;
+  takerBuyVolume?: string | null;
+  trades?: number | null;
 }
 
 /**
@@ -52,6 +54,9 @@ export class MarketClientService {
           low: Number(c.low),
           close: Number(c.close),
           volume: Number(c.volume),
+          takerBuyVolume:
+            c.takerBuyVolume != null ? Number(c.takerBuyVolume) : null,
+          trades: c.trades ?? null,
         }))
         // Ensure ascending chronological order for the engine.
         .sort((a, b) => a.openTime.getTime() - b.openTime.getTime());

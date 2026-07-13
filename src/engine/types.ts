@@ -6,6 +6,10 @@ export interface Candle {
   low: number;
   close: number;
   volume: number;
+  /** Order-flow: volume bought by aggressive takers (optional; older data lacks it). */
+  takerBuyVolume?: number | null;
+  /** Number of trades in the candle (optional). */
+  trades?: number | null;
 }
 
 /** What a strategy decides to do on a given candle. */
