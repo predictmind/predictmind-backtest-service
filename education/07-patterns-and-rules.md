@@ -174,4 +174,26 @@ crowd isn't over-leveraged long"). Missing funding → condition `false` (safe).
 **Verified live:** funding imported for BTC, and a funding-based rule backtest on
 BTC 4h ran with funding correctly aligned to candles. 29 tests green.
 
+## Update — signal #3: open interest (added later) 📊
+
+**Open interest (OI)** = the total size of open futures positions. Rising OI while
+price rises = **conviction** (new money); falling OI = positions closing. Signal
+only (we trade spot).
+
+- The `Candle` gained optional `openInterest`. The market client now aligns OI to
+  candles too — we generalised the funding alignment into one reusable
+  `attachSeries` helper (two-pointer walk), and both funding and OI use it.
+- New rule condition compares the **percent change** of OI over a lookback (rising
+  OI matters more than the raw level):
+
+```jsonc
+{ "type": "oi_change", "period": 1, "op": "gt", "value": 2 }   // OI up >2%
+```
+
+Missing OI → condition `false` (safe).
+
+**Verified live:** an OI-conviction rule on BTC 4h returned **+6.1% vs buy&hold
+−2.0% with a 77% win rate** in-sample. Promising — but per the methodology it must
+still beat benchmarks **out-of-sample** before we rely on it. 31 tests green.
+
 Next: the [glossary](08-glossary.md).

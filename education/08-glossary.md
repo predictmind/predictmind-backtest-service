@@ -39,7 +39,9 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Taker buy volume** | The part of a candle's volume from aggressive market buys. |
 | **Buy ratio** | takerBuyVolume ÷ volume (>0.5 = net buying pressure). |
 | **Funding rate** | Perp-futures crowd-positioning gauge (signal only; we trade spot). |
-| **Alignment (two-pointer)** | Matching an 8h funding series to each candle by time, efficiently. |
+| **Alignment (two-pointer)** | Matching a sparse signal series (funding/OI) to each candle by time, efficiently. |
+| **Open interest (OI)** | Total size of open futures positions (conviction gauge; signal only). |
+| **OI change** | Percent change of open interest over a lookback — rising = new money. |
 | **Condition group** | A set of conditions combined with "all" or "any". |
 | **RuleStrategy** | A strategy built from a rule spec — the AI generator's output format. |
 | **Benchmark** | A known strategy we compare against (must beat Buy & Hold). |

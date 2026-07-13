@@ -102,6 +102,43 @@ describe("RuleStrategy", () => {
     expect(strat.generate(candles).every((s) => s === "HOLD")).toBe(true);
   });
 
+  it("uses the oi_change condition (rising open interest)", () => {
+    // OI ramps up then falls; price flat.
+    const ois = [100, 100, 110, 121, 100, 90];
+    const candles: Candle[] = ois.map((oi, i) => ({
+      openTime: new Date(2025, 0, 1, i),
+      open: 50,
+      high: 51,
+      low: 49,
+      close: 50,
+      volume: 100,
+      openInterest: oi,
+    }));
+    const strat = new RuleStrategy({
+      entry: { mode: "all", conditions: [{ type: "oi_change", period: 1, op: "gt", value: 5 }] },
+      exit: { mode: "all", conditions: [{ type: "oi_change", period: 1, op: "lt", value: -5 }] },
+    });
+    const signals = strat.generate(candles);
+    expect(signals[3]).toBe("BUY"); // 110 -> 121 = +10%
+    expect(signals[4]).toBe("SELL"); // 121 -> 100 = -17%
+  });
+
+  it("oi_change is false when open-interest data is missing", () => {
+    const candles: Candle[] = [1, 2, 3].map((cl) => ({
+      openTime: new Date(),
+      open: cl,
+      high: cl,
+      low: cl,
+      close: cl,
+      volume: 1,
+    }));
+    const strat = new RuleStrategy({
+      entry: { mode: "all", conditions: [{ type: "oi_change", op: "gt", value: 0 }] },
+      exit: { mode: "all", conditions: [{ type: "oi_change", op: "lt", value: 0 }] },
+    });
+    expect(strat.generate(candles).every((s) => s === "HOLD")).toBe(true);
+  });
+
   it("combines an indicator AND a pattern with mode 'all'", () => {
     const candles = candlesFromCloses([50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40]);
     const strat = new RuleStrategy({

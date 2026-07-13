@@ -22,6 +22,7 @@ export type Condition =
   | { type: "bollinger"; period?: number; mult?: number; side: "below_lower" | "above_upper" }
   | { type: "order_flow"; period?: number; op: Comparator; value: number }
   | { type: "funding"; op: Comparator; value: number }
+  | { type: "oi_change"; period?: number; op: Comparator; value: number }
   | { type: "pattern"; name: string };
 
 export interface ConditionGroup {
@@ -118,6 +119,19 @@ function conditionSeries(cond: Condition, candles: Candle[]): boolean[] {
       return candles.map((c) =>
         c.fundingRate != null ? compare(c.fundingRate, cond.op, cond.value) : false,
       );
+    case "oi_change": {
+      // Percent change in open interest over `period` candles. Rising OI =
+      // conviction/new money entering. e.g. oi_change > 5 (%).
+      const period = cond.period && cond.period > 0 ? cond.period : 1;
+      return candles.map((c, i) => {
+        if (i < period) return false;
+        const now = c.openInterest;
+        const prev = candles[i - period].openInterest;
+        if (now == null || prev == null || prev === 0) return false;
+        const changePct = ((now - prev) / prev) * 100;
+        return compare(changePct, cond.op, cond.value);
+      });
+    }
     case "pattern":
       return detectPattern(cond.name, candles);
     default:

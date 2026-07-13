@@ -74,35 +74,79 @@ export class MarketClientService {
     }
 
     await this.attachFunding(symbol, candles);
+    await this.attachOpenInterest(symbol, timeframe, candles);
     return candles;
   }
 
   /**
-   * Attach the funding rate active at each candle's time. Funding is published
-   * ~every 8h, so for each candle we use the most recent funding at/or before its
-   * openTime (a two-pointer walk over both ascending series). Best-effort: if
-   * funding can't be fetched, candles keep fundingRate = null.
+   * Attach a time-series signal to each candle: for every candle, take the most
+   * recent point at/or before its openTime (a two-pointer walk over both
+   * ascending series). Best-effort — a fetch/parse failure just leaves the field
+   * untouched (null), so a missing signal never breaks a backtest.
    */
-  private async attachFunding(symbol: string, candles: Candle[]): Promise<void> {
+  private async attachSeries(
+    url: string,
+    candles: Candle[],
+    parse: (raw: unknown) => { time: number; value: number }[],
+    assign: (candle: Candle, value: number) => void,
+    label: string,
+  ): Promise<void> {
     if (candles.length === 0) return;
-    const url = `${this.baseUrl()}/api/v1/market/funding?symbol=${encodeURIComponent(symbol)}&limit=2000`;
-    let funding: { fundingRate: string; fundingTime: string }[];
+    let raw: unknown;
     try {
-      funding = await this.getJson<{ fundingRate: string; fundingTime: string }[]>(url);
+      raw = await this.getJson<unknown>(url);
     } catch {
-      this.logger.warn(`No funding data for ${symbol}; leaving fundingRate null`);
+      this.logger.warn(`No ${label} data; leaving it null`);
       return;
     }
-    const points = funding
-      .map((f) => ({ rate: Number(f.fundingRate), time: new Date(f.fundingTime).getTime() }))
-      .sort((a, b) => a.time - b.time);
+    const points = parse(raw).sort((a, b) => a.time - b.time);
     if (points.length === 0) return;
 
     let p = 0;
     for (const candle of candles) {
       const t = candle.openTime.getTime();
       while (p + 1 < points.length && points[p + 1].time <= t) p++;
-      candle.fundingRate = points[p].time <= t ? points[p].rate : null;
+      if (points[p].time <= t) assign(candle, points[p].value);
     }
+  }
+
+  /** Funding rate is published ~every 8h; align it to each candle. */
+  private attachFunding(symbol: string, candles: Candle[]): Promise<void> {
+    const url = `${this.baseUrl()}/api/v1/market/funding?symbol=${encodeURIComponent(symbol)}&limit=2000`;
+    return this.attachSeries(
+      url,
+      candles,
+      (raw) =>
+        (raw as { fundingRate: string; fundingTime: string }[]).map((f) => ({
+          time: new Date(f.fundingTime).getTime(),
+          value: Number(f.fundingRate),
+        })),
+      (candle, value) => {
+        candle.fundingRate = value;
+      },
+      `funding for ${symbol}`,
+    );
+  }
+
+  /** Open interest is per timeframe; align it to each candle. */
+  private attachOpenInterest(
+    symbol: string,
+    timeframe: string,
+    candles: Candle[],
+  ): Promise<void> {
+    const url = `${this.baseUrl()}/api/v1/market/oi?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&limit=2000`;
+    return this.attachSeries(
+      url,
+      candles,
+      (raw) =>
+        (raw as { openInterest: string; timestamp: string }[]).map((o) => ({
+          time: new Date(o.timestamp).getTime(),
+          value: Number(o.openInterest),
+        })),
+      (candle, value) => {
+        candle.openInterest = value;
+      },
+      `open interest for ${symbol} ${timeframe}`,
+    );
   }
 }
