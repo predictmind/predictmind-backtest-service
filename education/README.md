@@ -40,6 +40,7 @@ These notes are your textbook. Read in order; each explains **what** the code do
 | 4 | [04-performance-metrics.md](04-performance-metrics.md) | Net profit, win rate, profit factor, drawdown, Sharpe/Sortino, expectancy |
 | 5 | [05-database-and-api.md](05-database-and-api.md) | Storing runs, the market client, and the endpoints |
 | 6 | [06-running-and-testing.md](06-running-and-testing.md) | Running it in Docker and the real end-to-end test |
-| 7 | [07-glossary.md](07-glossary.md) | Dictionary of every backtesting word |
+| 7 | [07-patterns-and-rules.md](07-patterns-and-rules.md) | Candlestick patterns, more indicators, and rule-based strategies (data + patterns) |
+| 8 | [08-glossary.md](08-glossary.md) | Dictionary of every backtesting word |
 
 Start with [01-what-is-backtesting.md](01-what-is-backtesting.md). 🚀

@@ -1,4 +1,4 @@
-# 7. Glossary (the dictionary)
+# 8. Glossary (the dictionary)
 
 Backtesting words used in these notes. General coding words (server, API, database,
 Prisma, module, controller, service, DTO, decorator, Docker, port, CI, east-west
@@ -20,9 +20,23 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Fee** | Small cost per buy/sell (we use 0.1% per side). |
 | **SMA / EMA** | Simple / Exponential Moving Average (trend smoothers). |
 | **RSI** | 0–100 momentum gauge; <30 oversold, >70 overbought. |
+| **MACD** | Gap between a fast and slow EMA + a signal line — momentum. |
+| **Bollinger Bands** | A moving average with bands set a few std-devs above/below. |
+| **ATR** | Average True Range — typical candle move size (volatility). |
+| **Stochastic %K** | Where the close sits in the recent high-low range (0-100). |
+| **Standard deviation** | How spread out numbers are (used for bands and risk). |
 | **Crossover** | When a fast average crosses above/below a slow one. |
 | **Mean reversion** | Betting overshoots snap back (RSI strategy). |
 | **Trend following** | Betting moves continue (crossover strategies). |
+| **Candlestick pattern** | A candle shape traders read as a hint (hammer, engulfing...). |
+| **Body / wick** | The thick part / the thin lines of a candle. |
+| **Doji** | Tiny-body candle — indecision. |
+| **Hammer / shooting star** | Long-wick reversal candles (bullish / bearish). |
+| **Engulfing** | A candle whose body wraps the previous one (bullish/bearish). |
+| **Morning / evening star** | Three-candle bullish / bearish reversal patterns. |
+| **Rule spec** | JSON describing entry/exit conditions (indicators + patterns). |
+| **Condition group** | A set of conditions combined with "all" or "any". |
+| **RuleStrategy** | A strategy built from a rule spec — the AI generator's output format. |
 | **Benchmark** | A known strategy we compare against (must beat Buy & Hold). |
 | **Net profit %** | Overall money gained/lost. |
 | **Win rate** | Share of trades that made money. |

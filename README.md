@@ -29,8 +29,26 @@ walkthroughs are in [`education/`](education/README.md).
 | GET | `/api/v1/health` | Health check |
 
 Benchmark strategies: `buy_and_hold, sma_crossover, ema_crossover, rsi_reversion`.
+Plus a generic `rule` strategy built from a JSON spec that combines **indicators**
+(SMA, EMA, RSI, MACD, Bollinger, ATR, Stochastic) and **candlestick patterns**
+(doji, hammer, shooting star, engulfing, morning/evening star) — this is the format
+the AI Strategy Generator (E10) will produce.
+
 Metrics: net profit, buy&hold, win rate, profit factor, max drawdown, Sharpe,
 Sortino, expectancy, avg trade, trade count, final equity.
+
+Example rule backtest:
+
+```jsonc
+POST /api/v1/backtests
+{ "symbol": "BTC", "timeframe": "1h", "strategy": "rule",
+  "rules": {
+    "entry": { "mode": "any", "conditions": [
+      { "type": "indicator", "name": "rsi", "period": 14, "op": "lt", "value": 40 },
+      { "type": "pattern", "name": "bullish_engulfing" } ] },
+    "exit":  { "mode": "any", "conditions": [
+      { "type": "indicator", "name": "rsi", "period": 14, "op": "gt", "value": 65 } ] } } }
+```
 
 ## Getting started
 

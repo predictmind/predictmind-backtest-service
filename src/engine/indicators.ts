@@ -9,6 +9,8 @@
  * from externally-sourced data — which static analysis (CodeQL) rightly flags.
  */
 
+import { Candle } from "./types";
+
 /** Simple Moving Average: plain average of the last `period` closes. */
 export function sma(values: number[], period: number): (number | null)[] {
   if (period <= 0) return values.map(() => null);
@@ -76,6 +78,104 @@ export function rsi(closes: number[], period: number): (number | null)[] {
       avgLoss = (avgLoss * (period - 1) + l) / period;
       out.push(rsiFrom(avgGain, avgLoss));
     }
+  }
+  return out;
+}
+
+/** MACD: difference of two EMAs, plus its signal line and histogram. */
+export function macd(
+  closes: number[],
+  fast = 12,
+  slow = 26,
+  signalPeriod = 9,
+): { macd: (number | null)[]; signal: (number | null)[]; histogram: (number | null)[] } {
+  const fastEma = ema(closes, fast);
+  const slowEma = ema(closes, slow);
+  const macdLine = closes.map((_, i) => {
+    const f = fastEma[i];
+    const s = slowEma[i];
+    return f !== null && s !== null ? f - s : null;
+  });
+
+  // Signal line = EMA of the (non-null) MACD line, realigned to full length.
+  const defined = macdLine.filter((v): v is number => v !== null);
+  const signalDefined = ema(defined, signalPeriod);
+  const firstIdx = macdLine.findIndex((v) => v !== null);
+  const signal: (number | null)[] = closes.map(() => null);
+  const histogram: (number | null)[] = closes.map(() => null);
+  const outSignal = [...signal];
+  const outHist = [...histogram];
+  if (firstIdx >= 0) {
+    for (let j = 0; j < signalDefined.length; j++) {
+      const idx = firstIdx + j;
+      const sig = signalDefined[j];
+      outSignal[idx] = sig;
+      const m = macdLine[idx];
+      outHist[idx] = sig !== null && m !== null ? m - sig : null;
+    }
+  }
+  return { macd: macdLine, signal: outSignal, histogram: outHist };
+}
+
+/** Bollinger Bands: a moving average with bands `mult` std-devs above/below. */
+export function bollinger(
+  closes: number[],
+  period = 20,
+  mult = 2,
+): { middle: (number | null)[]; upper: (number | null)[]; lower: (number | null)[] } {
+  const middle = sma(closes, period);
+  const upper: (number | null)[] = [];
+  const lower: (number | null)[] = [];
+  for (let i = 0; i < closes.length; i++) {
+    const m = middle[i];
+    if (m === null) {
+      upper.push(null);
+      lower.push(null);
+      continue;
+    }
+    let sumSq = 0;
+    for (let j = i - period + 1; j <= i; j++) sumSq += (closes[j] - m) ** 2;
+    const sd = Math.sqrt(sumSq / period);
+    upper.push(m + mult * sd);
+    lower.push(m - mult * sd);
+  }
+  return { middle, upper, lower };
+}
+
+/** Average True Range: typical size of a candle's move (volatility). */
+export function atr(candles: Candle[], period = 14): (number | null)[] {
+  if (candles.length === 0) return [];
+  const trueRanges: number[] = [];
+  for (let i = 0; i < candles.length; i++) {
+    const c = candles[i];
+    if (i === 0) {
+      trueRanges.push(c.high - c.low);
+    } else {
+      const prevClose = candles[i - 1].close;
+      trueRanges.push(
+        Math.max(c.high - c.low, Math.abs(c.high - prevClose), Math.abs(c.low - prevClose)),
+      );
+    }
+  }
+  return sma(trueRanges, period);
+}
+
+/** Stochastic %K: where the close sits within the recent high-low range (0-100). */
+export function stochasticK(candles: Candle[], period = 14): (number | null)[] {
+  const out: (number | null)[] = [];
+  for (let i = 0; i < candles.length; i++) {
+    if (i < period - 1) {
+      out.push(null);
+      continue;
+    }
+    let hi = -Infinity;
+    let lo = Infinity;
+    for (let j = i - period + 1; j <= i; j++) {
+      if (candles[j].high > hi) hi = candles[j].high;
+      if (candles[j].low < lo) lo = candles[j].low;
+    }
+    const range = hi - lo;
+    out.push(range > 0 ? ((candles[i].close - lo) / range) * 100 : 50);
   }
   return out;
 }

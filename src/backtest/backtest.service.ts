@@ -2,8 +2,9 @@ import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Backtest, Prisma } from "@prisma/client";
 import { runBacktest } from "../engine/backtest-engine";
 import { computeMetrics, Metrics } from "../engine/metrics";
+import { RuleSpec } from "../engine/rule-strategy";
 import { BENCHMARK_STRATEGIES, createStrategy } from "../engine/strategies";
-import { Candle } from "../engine/types";
+import { Candle, Strategy } from "../engine/types";
 import { MarketClientService } from "../market/market-client.service";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -33,8 +34,9 @@ export class BacktestService {
     strategyName: string,
     params: Record<string, number> = {},
     limit = 500,
+    rules?: RuleSpec,
   ): Promise<BacktestSummary> {
-    const strategy = createStrategy(strategyName, params);
+    const strategy = createStrategy(strategyName, params, rules);
     const candles = await this.market.getCandles(symbol, timeframe, limit);
     if (candles.length < 10) {
       throw new NotFoundException(
@@ -42,12 +44,14 @@ export class BacktestService {
       );
     }
 
+    // For the "rule" strategy we store the whole rule spec; otherwise the params.
+    const storageParams = (strategyName === "rule" ? rules : params) ?? {};
     const { metrics, backtest } = await this.execute(
       symbol,
       timeframe,
-      strategy.name,
-      strategy.params,
+      strategy,
       candles,
+      storageParams as Prisma.InputJsonValue,
     );
 
     return {
@@ -55,7 +59,7 @@ export class BacktestService {
       symbol,
       timeframe,
       strategy: strategy.name,
-      params: strategy.params,
+      params: storageParams as Record<string, number>,
       candleCount: candles.length,
       metrics,
     };
@@ -80,9 +84,9 @@ export class BacktestService {
       const { metrics, backtest } = await this.execute(
         symbol,
         timeframe,
-        strategy.name,
-        strategy.params,
+        strategy,
         candles,
+        strategy.params as Prisma.InputJsonValue,
       );
       summaries.push({
         id: backtest.id,
@@ -103,11 +107,10 @@ export class BacktestService {
   private async execute(
     symbol: string,
     timeframe: string,
-    strategyName: string,
-    params: Record<string, number>,
+    strategy: Strategy,
     candles: Candle[],
+    storageParams: Prisma.InputJsonValue,
   ): Promise<{ metrics: Metrics; backtest: Backtest }> {
-    const strategy = createStrategy(strategyName, params);
     const signals = strategy.generate(candles);
     const run = runBacktest(candles, signals);
     const metrics = computeMetrics(run, candles, timeframe);
@@ -116,8 +119,8 @@ export class BacktestService {
       data: {
         coinSymbol: symbol.toUpperCase(),
         timeframe,
-        strategyName,
-        params: params as Prisma.InputJsonValue,
+        strategyName: strategy.name,
+        params: storageParams,
         candleCount: candles.length,
         startTime: candles[0].openTime,
         endTime: candles[candles.length - 1].openTime,

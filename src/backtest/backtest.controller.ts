@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { RuleSpec } from "../engine/rule-strategy";
 import { BacktestService } from "./backtest.service";
 import { BenchmarkDto, RunBacktestDto } from "./dto/run-backtest.dto";
 
@@ -18,6 +19,7 @@ export class BacktestController {
       dto.strategy,
       dto.params ?? {},
       dto.limit ?? 500,
+      dto.rules as unknown as RuleSpec | undefined,
     );
   }
 

@@ -24,6 +24,16 @@ export class RunBacktestDto {
   @IsObject()
   params?: Record<string, number>;
 
+  @ApiPropertyOptional({
+    description:
+      'For strategy "rule": a { entry, exit } spec combining indicators and patterns',
+    type: "object",
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  rules?: Record<string, unknown>;
+
   @ApiPropertyOptional({ description: "Number of candles to test", default: 500 })
   @IsOptional()
   @Transform(({ value }) => Number(value))

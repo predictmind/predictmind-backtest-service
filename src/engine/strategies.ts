@@ -6,6 +6,7 @@
  */
 
 import { ema, rsi, sma } from "./indicators";
+import { RuleSpec, RuleStrategy } from "./rule-strategy";
 import { Candle, Signal, Strategy } from "./types";
 
 /** Buy on the first candle and hold forever — the return everything must beat. */
@@ -87,10 +88,15 @@ export class RsiReversion implements Strategy {
   }
 }
 
-/** Factory: build a strategy by name + optional params (used by the API). */
+/**
+ * Factory: build a strategy by name + optional params (used by the API).
+ * The special "rule" strategy takes a full JSON rule spec (indicators + patterns)
+ * instead of numeric params — this is what the AI generator will produce.
+ */
 export function createStrategy(
   name: string,
   params: Record<string, number> = {},
+  rules?: RuleSpec,
 ): Strategy {
   switch (name) {
     case "buy_and_hold":
@@ -101,6 +107,9 @@ export function createStrategy(
       return new EmaCrossover(params.fast, params.slow);
     case "rsi_reversion":
       return new RsiReversion(params.period, params.low, params.high);
+    case "rule":
+      if (!rules) throw new Error('strategy "rule" requires a rules spec');
+      return new RuleStrategy(rules);
     default:
       throw new Error(`Unknown strategy: ${name}`);
   }
