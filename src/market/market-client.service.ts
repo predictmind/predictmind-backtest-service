@@ -76,6 +76,7 @@ export class MarketClientService {
     await this.attachFunding(symbol, candles);
     await this.attachOpenInterest(symbol, timeframe, candles);
     await this.attachLongShort(symbol, timeframe, candles);
+    await this.attachFearGreed(candles);
     return candles;
   }
 
@@ -170,6 +171,24 @@ export class MarketClientService {
         candle.longShortRatio = value;
       },
       `long/short ratio for ${symbol} ${timeframe}`,
+    );
+  }
+
+  /** Market-wide Fear & Greed Index (daily); align it to each candle. */
+  private attachFearGreed(candles: Candle[]): Promise<void> {
+    const url = `${this.baseUrl()}/api/v1/market/fng?limit=3000`;
+    return this.attachSeries(
+      url,
+      candles,
+      (raw) =>
+        (raw as { value: number; timestamp: string }[]).map((f) => ({
+          time: new Date(f.timestamp).getTime(),
+          value: Number(f.value),
+        })),
+      (candle, value) => {
+        candle.fearGreed = value;
+      },
+      `fear & greed index`,
     );
   }
 }

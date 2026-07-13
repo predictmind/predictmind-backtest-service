@@ -175,6 +175,42 @@ describe("RuleStrategy", () => {
     expect(strat.generate(candles).every((s) => s === "HOLD")).toBe(true);
   });
 
+  it("uses the fear_greed condition (contrarian sentiment)", () => {
+    const fg = [15, 20, 80, 85]; // extreme fear -> extreme greed
+    const candles: Candle[] = fg.map((v) => ({
+      openTime: new Date(),
+      open: 50,
+      high: 51,
+      low: 49,
+      close: 50,
+      volume: 100,
+      fearGreed: v,
+    }));
+    const strat = new RuleStrategy({
+      entry: { mode: "all", conditions: [{ type: "fear_greed", op: "lt", value: 25 }] },
+      exit: { mode: "all", conditions: [{ type: "fear_greed", op: "gt", value: 75 }] },
+    });
+    const signals = strat.generate(candles);
+    expect(signals[0]).toBe("BUY"); // extreme fear -> contrarian buy
+    expect(signals[2]).toBe("SELL"); // extreme greed -> contrarian sell
+  });
+
+  it("fear_greed is false when data is missing", () => {
+    const candles: Candle[] = [1, 2].map((cl) => ({
+      openTime: new Date(),
+      open: cl,
+      high: cl,
+      low: cl,
+      close: cl,
+      volume: 1,
+    }));
+    const strat = new RuleStrategy({
+      entry: { mode: "all", conditions: [{ type: "fear_greed", op: "lt", value: 25 }] },
+      exit: { mode: "all", conditions: [{ type: "fear_greed", op: "gt", value: 75 }] },
+    });
+    expect(strat.generate(candles).every((s) => s === "HOLD")).toBe(true);
+  });
+
   it("combines an indicator AND a pattern with mode 'all'", () => {
     const candles = candlesFromCloses([50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40]);
     const strat = new RuleStrategy({

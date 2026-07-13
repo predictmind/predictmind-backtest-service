@@ -16,6 +16,8 @@ export interface Candle {
   openInterest?: number | null;
   /** Global long/short account ratio at this candle's time (optional; signal only). */
   longShortRatio?: number | null;
+  /** Market-wide Fear & Greed Index (0-100) at this candle's time (optional). */
+  fearGreed?: number | null;
 }
 
 /** What a strategy decides to do on a given candle. */

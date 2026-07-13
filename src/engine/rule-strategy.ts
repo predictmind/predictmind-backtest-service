@@ -24,6 +24,7 @@ export type Condition =
   | { type: "funding"; op: Comparator; value: number }
   | { type: "oi_change"; period?: number; op: Comparator; value: number }
   | { type: "long_short_ratio"; op: Comparator; value: number }
+  | { type: "fear_greed"; op: Comparator; value: number }
   | { type: "pattern"; name: string };
 
 export interface ConditionGroup {
@@ -138,6 +139,12 @@ function conditionSeries(cond: Condition, candles: Candle[]): boolean[] {
       // (contrarian caution); < 1 = more accounts short.
       return candles.map((c) =>
         c.longShortRatio != null ? compare(c.longShortRatio, cond.op, cond.value) : false,
+      );
+    case "fear_greed":
+      // Market-wide sentiment 0-100 (contrarian). e.g. fear_greed < 25 =
+      // extreme fear (often near bottoms).
+      return candles.map((c) =>
+        c.fearGreed != null ? compare(c.fearGreed, cond.op, cond.value) : false,
       );
     case "pattern":
       return detectPattern(cond.name, candles);

@@ -43,6 +43,7 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Open interest (OI)** | Total size of open futures positions (conviction gauge; signal only). |
 | **OI change** | Percent change of open interest over a lookback — rising = new money. |
 | **Long/short ratio** | Share of futures accounts long vs short — contrarian crowd gauge (signal only). |
+| **Fear & Greed Index** | Market-wide daily sentiment 0-100; contrarian (fear near bottoms, greed near tops). |
 | **Condition group** | A set of conditions combined with "all" or "any". |
 | **RuleStrategy** | A strategy built from a rule spec — the AI generator's output format. |
 | **Benchmark** | A known strategy we compare against (must beat Buy & Hold). |

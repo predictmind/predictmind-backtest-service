@@ -216,4 +216,23 @@ REST (needs a live websocket or paid source).
 **Verified live:** long/short ratio imported for BTC and aligned to candles in a
 backtest. 33 tests green.
 
+## Update — signal #5: Fear & Greed Index (added later) 😱🤑
+
+The **Crypto Fear & Greed Index** is one market-wide daily number 0–100 (0 =
+extreme fear, 100 = extreme greed) — a **contrarian** gauge. Unlike the others it's
+not per-coin and comes from a free public API (alternative.me).
+
+- The market service captures it; the client aligns the daily value to each candle
+  (same `attachSeries` helper); the `Candle` gained optional `fearGreed`.
+- New rule condition:
+
+```jsonc
+{ "type": "fear_greed", "op": "lt", "value": 25 }   // extreme fear -> contrarian buy
+```
+
+Missing data → `false` (safe).
+
+**Verified live:** 1000 daily values imported and aligned to BTC 4h candles in a
+backtest. 35 tests green.
+
 Next: the [glossary](08-glossary.md).
