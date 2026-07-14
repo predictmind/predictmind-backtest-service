@@ -57,12 +57,18 @@ describe("generateAndRank", () => {
     }
   });
 
-  it("finalists are ranked by in-sample Sharpe (descending)", () => {
+  it("finalists are ranked by PredictScore (descending) and carry a grade", () => {
     const result = generateAndRank(candles, "1h", { minTrades: 3, topN: 5 });
     for (let i = 1; i < result.strategies.length; i++) {
-      expect(result.strategies[i - 1].train.sharpe).toBeGreaterThanOrEqual(
-        result.strategies[i].train.sharpe,
+      expect(result.strategies[i - 1].predictScore.score).toBeGreaterThanOrEqual(
+        result.strategies[i].predictScore.score,
       );
+    }
+    for (const s of result.strategies) {
+      expect(s.predictScore.score).toBeGreaterThanOrEqual(0);
+      expect(s.predictScore.score).toBeLessThanOrEqual(100);
+      expect(["A+", "A", "B", "C", "D"]).toContain(s.predictScore.grade);
+      expect(s.predictScore.confidence).toBeGreaterThanOrEqual(0);
     }
   });
 });

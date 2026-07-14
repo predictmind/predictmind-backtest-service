@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Backtest, Prisma } from "@prisma/client";
 import { EngineOptions, runBacktest } from "../engine/backtest-engine";
 import { computeMetrics, Metrics } from "../engine/metrics";
+import { predictScore, PredictScoreResult } from "../engine/predict-score";
 import { RuleSpec } from "../engine/rule-strategy";
 import { BENCHMARK_STRATEGIES, createStrategy } from "../engine/strategies";
 import { Candle, Strategy } from "../engine/types";
@@ -16,6 +17,7 @@ export interface BacktestSummary {
   params: Record<string, number>;
   candleCount: number;
   metrics: Metrics;
+  predictScore: PredictScoreResult;
 }
 
 @Injectable()
@@ -64,6 +66,7 @@ export class BacktestService {
       params: storageParams as Record<string, number>,
       candleCount: candles.length,
       metrics,
+      predictScore: predictScore(metrics),
     };
   }
 
@@ -98,6 +101,7 @@ export class BacktestService {
         params: strategy.params,
         candleCount: candles.length,
         metrics,
+        predictScore: predictScore(metrics),
       });
     }
 

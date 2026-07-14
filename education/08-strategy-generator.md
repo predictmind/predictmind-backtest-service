@@ -91,12 +91,50 @@ candidates and returned 5 finalists. The top pick `sma_cross(20/50)` beat Buy & 
 **out-of-sample** (test +1.38% vs +1.02%), and 4 of 5 finalists beat it OOS. 44
 tests green.
 
+## Update — PredictScore & ranking (E11, added later) 🏅
+
+The generator produced finalists with lots of numbers (net profit, drawdown,
+Sharpe...). **PredictScore** squashes those into **one 0–100 score** so strategies
+can be ranked and compared at a glance — plus a **letter grade** and a
+**confidence**.
+
+The score is a weighted blend (from docs §9), each factor mapped to 0–100:
+
+| Factor | Weight | From |
+| --- | --- | --- |
+| Profitability | 30% | net profit % |
+| Win rate | 15% | win rate |
+| Drawdown | 20% | max drawdown (smaller = higher) |
+| Consistency | 15% | Sharpe ratio |
+| Market fit | 10% | how much it beat Buy & Hold |
+| Sentiment alignment | 10% | *optional* — omitted → other weights renormalise |
+
+```ts
+score = Σ (factorScore × weight);   // 0-100
+grade = score>=90?"A+" : >=80?"A" : >=70?"B" : >=60?"C" : "D";
+```
+
+- **Data-first:** sentiment is the only optional factor. If we don't supply it, we
+  **drop its 10% and renormalise** the other five to sum to 100% — so a strategy is
+  always judged on its data merit first.
+- **Confidence (S11.2):** *how much to trust the score.* It rises with more trades
+  (bigger sample) and **falls when the in-sample vs out-of-sample gap is large**
+  (a big gap smells of overfitting). So a high score with low confidence is a
+  yellow flag.
+- **We score on the out-of-sample metrics** and rank finalists by PredictScore —
+  the honest quality measure, not the tuned one.
+
+**Verified live** on BTC 4h: finalists came back ranked by PredictScore, e.g.
+`ema_cross(12/26) + buy_pressure` **score 74, grade B**, while a strategy that
+failed to beat the market out-of-sample scored **60 (grade C)**. Every single
+backtest and benchmark result now carries a PredictScore too.
+
 ## What this is — and isn't (yet)
 
-- **Is:** a transparent, reproducible search that produces readable strategies and
-  proves them out-of-sample.
+- **Is:** a transparent search that produces readable strategies, proves them
+  out-of-sample, and ranks them with a single explainable score.
 - **Isn't yet:** parameter *optimization* (fine-tuning numbers), walk-forward across
-  many windows, or an ML ranking model (PredictScore, E11). Those are the next
-  upgrades — this is the solid, honest foundation they build on.
+  many windows, or a machine-learning ranking model. Those are the next upgrades —
+  this is the solid, honest foundation they build on.
 
 Next: the [glossary](09-glossary.md).

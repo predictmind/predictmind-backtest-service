@@ -75,5 +75,10 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Risk:reward (RR)** | How much you aim to make vs risk (RR 2 = target twice the stop distance). |
 | **Position sizing** | Choosing trade size so you risk only a fixed % of equity per trade. |
 | **Intrabar exit** | Exiting mid-candle when price touches a stop/target (uses the candle's low/high). |
+| **PredictScore** | A single 0-100 quality score blending 5-6 weighted factors. |
+| **Grade** | A letter (A+/A/B/C/D) from the PredictScore. |
+| **Confidence** | How much to trust a score — up with more trades, down with a big in/out-of-sample gap. |
+| **Factor / weight** | One ingredient of PredictScore (e.g. drawdown 20%) and its share. |
+| **Renormalise** | Rescale the remaining weights to sum to 100% when a factor (sentiment) is omitted. |
 
 Back to the [index](README.md).

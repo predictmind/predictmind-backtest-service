@@ -8,6 +8,7 @@
 
 import { EngineOptions, runBacktest } from "../engine/backtest-engine";
 import { computeMetrics, Metrics } from "../engine/metrics";
+import { predictScore, PredictScoreResult } from "../engine/predict-score";
 import { RuleSpec, RuleStrategy } from "../engine/rule-strategy";
 import { Candle } from "../engine/types";
 import { buildCandidateSpecs } from "./candidate-space";
@@ -25,6 +26,8 @@ export interface GeneratedStrategy {
   train: Metrics;
   test: Metrics;
   beatsBuyHoldOutOfSample: boolean;
+  /** PredictScore computed on the out-of-sample (test) metrics (E11). */
+  predictScore: PredictScoreResult;
 }
 
 export interface GeneratorResult {
@@ -71,18 +74,25 @@ export function generateAndRank(
     (a, b) => b.train.sharpe - a.train.sharpe || b.train.netProfitPct - a.train.netProfitPct,
   );
 
-  // 3) Take the finalists and measure them out-of-sample (the honest test).
+  // 3) Take the finalists, measure them out-of-sample, and PredictScore them.
   const strategies: GeneratedStrategy[] = scored.slice(0, topN).map((c) => {
-    const test = evaluate(c.spec, candles.slice(split), timeframe, engine);
+    const testMetrics = evaluate(c.spec, candles.slice(split), timeframe, engine);
     return {
       label: c.label,
       spec: c.spec,
       train: c.train,
-      test,
+      test: testMetrics,
       beatsBuyHoldOutOfSample:
-        test.netProfitPct > test.buyHoldPct && test.netProfitPct > 0,
+        testMetrics.netProfitPct > testMetrics.buyHoldPct && testMetrics.netProfitPct > 0,
+      // Score on the honest out-of-sample metrics; confidence uses the in/out gap.
+      predictScore: predictScore(testMetrics, {
+        oosGap: c.train.netProfitPct - testMetrics.netProfitPct,
+      }),
     };
   });
+
+  // 4) Final ranking is by PredictScore (out-of-sample quality), best first.
+  strategies.sort((a, b) => b.predictScore.score - a.predictScore.score);
 
   return {
     evaluated: candidates.length,
