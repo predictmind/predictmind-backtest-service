@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Backtest, Prisma } from "@prisma/client";
-import { runBacktest } from "../engine/backtest-engine";
+import { EngineOptions, runBacktest } from "../engine/backtest-engine";
 import { computeMetrics, Metrics } from "../engine/metrics";
 import { RuleSpec } from "../engine/rule-strategy";
 import { BENCHMARK_STRATEGIES, createStrategy } from "../engine/strategies";
@@ -35,6 +35,7 @@ export class BacktestService {
     params: Record<string, number> = {},
     limit = 500,
     rules?: RuleSpec,
+    engine: EngineOptions = {},
   ): Promise<BacktestSummary> {
     const strategy = createStrategy(strategyName, params, rules);
     const candles = await this.market.getCandles(symbol, timeframe, limit);
@@ -52,6 +53,7 @@ export class BacktestService {
       strategy,
       candles,
       storageParams as Prisma.InputJsonValue,
+      engine,
     );
 
     return {
@@ -110,9 +112,10 @@ export class BacktestService {
     strategy: Strategy,
     candles: Candle[],
     storageParams: Prisma.InputJsonValue,
+    engine: EngineOptions = {},
   ): Promise<{ metrics: Metrics; backtest: Backtest }> {
     const signals = strategy.generate(candles);
-    const run = runBacktest(candles, signals);
+    const run = runBacktest(candles, signals, engine);
     const metrics = computeMetrics(run, candles, timeframe);
 
     const backtest = await this.prisma.backtest.create({

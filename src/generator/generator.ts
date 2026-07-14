@@ -6,7 +6,7 @@
  * overfitting (methodology §16.5: success is measured out-of-sample).
  */
 
-import { runBacktest } from "../engine/backtest-engine";
+import { EngineOptions, runBacktest } from "../engine/backtest-engine";
 import { computeMetrics, Metrics } from "../engine/metrics";
 import { RuleSpec, RuleStrategy } from "../engine/rule-strategy";
 import { Candle } from "../engine/types";
@@ -16,6 +16,7 @@ export interface GeneratorOptions {
   trainFraction?: number; // portion of candles used for the in-sample search
   minTrades?: number; // ignore candidates that barely trade
   topN?: number; // how many finalists to report
+  engine?: EngineOptions; // risk controls applied to every candidate
 }
 
 export interface GeneratedStrategy {
@@ -33,9 +34,14 @@ export interface GeneratorResult {
   strategies: GeneratedStrategy[];
 }
 
-function evaluate(spec: RuleSpec, candles: Candle[], timeframe: string): Metrics {
+function evaluate(
+  spec: RuleSpec,
+  candles: Candle[],
+  timeframe: string,
+  engine: EngineOptions,
+): Metrics {
   const signals = new RuleStrategy(spec).generate(candles);
-  const run = runBacktest(candles, signals);
+  const run = runBacktest(candles, signals, engine);
   return computeMetrics(run, candles, timeframe);
 }
 
@@ -47,6 +53,7 @@ export function generateAndRank(
   const trainFraction = options.trainFraction ?? 0.7;
   const minTrades = options.minTrades ?? 5;
   const topN = options.topN ?? 5;
+  const engine = options.engine ?? {};
 
   const split = Math.floor(candles.length * trainFraction);
   const train = candles.slice(0, split);
@@ -56,7 +63,7 @@ export function generateAndRank(
 
   // 1) Evaluate every candidate in-sample; keep ones that trade enough.
   const scored = candidates
-    .map((c) => ({ ...c, train: evaluate(c.spec, train, timeframe) }))
+    .map((c) => ({ ...c, train: evaluate(c.spec, train, timeframe, engine) }))
     .filter((c) => c.train.tradesCount >= minTrades);
 
   // 2) Rank by risk-adjusted return (Sharpe), tie-break on net profit.
@@ -66,7 +73,7 @@ export function generateAndRank(
 
   // 3) Take the finalists and measure them out-of-sample (the honest test).
   const strategies: GeneratedStrategy[] = scored.slice(0, topN).map((c) => {
-    const test = evaluate(c.spec, candles.slice(split), timeframe);
+    const test = evaluate(c.spec, candles.slice(split), timeframe, engine);
     return {
       label: c.label,
       spec: c.spec,

@@ -34,6 +34,16 @@ export class RunBacktestDto {
   @IsObject()
   rules?: Record<string, unknown>;
 
+  @ApiPropertyOptional({
+    description:
+      "Risk controls: { stopLossPct, atrMult, atrPeriod, takeProfitRR, riskPerTradePct }",
+    type: "object",
+    additionalProperties: { type: "number" },
+  })
+  @IsOptional()
+  @IsObject()
+  risk?: Record<string, number>;
+
   @ApiPropertyOptional({ description: "Number of candles to test", default: 500 })
   @IsOptional()
   @Transform(({ value }) => Number(value))
@@ -101,4 +111,29 @@ export class GenerateDto {
   @Min(1)
   @Max(20)
   topN?: number;
+
+  @ApiPropertyOptional({
+    description: "Risk controls applied to every candidate (same shape as backtest risk)",
+    type: "object",
+    additionalProperties: { type: "number" },
+  })
+  @IsOptional()
+  @IsObject()
+  risk?: Record<string, number>;
+}
+
+/** Map a plain risk object (from a request) to engine options. */
+export function toEngineOptions(risk?: Record<string, number>): {
+  stopLossPct?: number;
+  atrMult?: number;
+  atrPeriod?: number;
+  takeProfitRR?: number;
+  riskPerTradePct?: number;
+} {
+  if (!risk) return {};
+  const out: Record<string, number> = {};
+  for (const key of ["stopLossPct", "atrMult", "atrPeriod", "takeProfitRR", "riskPerTradePct"]) {
+    if (typeof risk[key] === "number") out[key] = risk[key];
+  }
+  return out;
 }

@@ -69,6 +69,55 @@ describe("runBacktest (spot long/flat)", () => {
   });
 });
 
+describe("runBacktest risk controls (S10.3)", () => {
+  it("stop-loss caps the loss on a falling market", () => {
+    // Buy at 100, price falls hard; a 5% stop should exit near -5% (plus fees).
+    const candles = candlesFromCloses([100, 100, 90, 80, 70]);
+    const signals = ["BUY", "HOLD", "HOLD", "HOLD", "HOLD"] as const;
+    const withStop = runBacktest(candles, [...signals], { feePct: 0, stopLossPct: 0.05 });
+    const noStop = runBacktest(candles, [...signals], { feePct: 0 });
+    expect(withStop.finalEquity).toBeGreaterThan(noStop.finalEquity);
+    expect(withStop.trades[0].pnlPct).toBeGreaterThan(-6);
+    expect(withStop.trades[0].pnlPct).toBeLessThan(0);
+  });
+
+  it("take-profit locks in a gain on a rising market", () => {
+    // Buy at 100, 5% stop, RR 1 -> take-profit at +5%. Price rises past it.
+    const candles = candlesFromCloses([100, 100, 106, 110]);
+    const signals = ["BUY", "HOLD", "HOLD", "HOLD"] as const;
+    const run = runBacktest(candles, [...signals], {
+      feePct: 0,
+      stopLossPct: 0.05,
+      takeProfitRR: 1,
+    });
+    expect(run.trades).toHaveLength(1);
+    expect(run.trades[0].pnlPct).toBeCloseTo(5, 0);
+  });
+
+  it("position sizing keeps some cash in reserve", () => {
+    const candles = candlesFromCloses([100, 101, 102, 103]);
+    const signals = ["BUY", "HOLD", "HOLD", "HOLD"] as const;
+    // Risk 1% of equity with a 10% stop -> deploy ~10% of capital, not all-in.
+    const run = runBacktest(candles, [...signals], {
+      feePct: 0,
+      stopLossPct: 0.1,
+      riskPerTradePct: 0.01,
+      initialCapital: 10_000,
+    });
+    // Only a small slice is exposed, so the equity barely moves vs all-in.
+    const allIn = runBacktest(candles, [...signals], { feePct: 0, initialCapital: 10_000 });
+    expect(run.finalEquity).toBeLessThan(allIn.finalEquity);
+    expect(run.finalEquity).toBeGreaterThan(10_000); // still profited a bit
+  });
+
+  it("with no risk options it stays all-in (backward compatible)", () => {
+    const candles = candlesFromCloses([100, 110]);
+    const signals = ["BUY", "HOLD"] as const;
+    const run = runBacktest(candles, [...signals], { feePct: 0 });
+    expect(run.finalEquity).toBeCloseTo(11_000, 0); // 10k -> +10%
+  });
+});
+
 describe("metrics", () => {
   it("maxDrawdown measures the worst peak-to-trough drop", () => {
     expect(maxDrawdown([100, 120, 60, 90])).toBeCloseTo(50, 5); // 120 -> 60

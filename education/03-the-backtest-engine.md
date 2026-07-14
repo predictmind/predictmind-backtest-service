@@ -96,4 +96,37 @@ is **after costs** — the honest figure.
 > handling and careful anti-cheating. For V1 benchmarking we act on the close;
 > stops are a documented next step.
 
+## Update — risk management & position sizing (S10.3, added later) 🛡️
+
+The "next step" above is now here. The engine gained **optional** risk controls
+(all off by default, so everything above still holds). Good risk management is
+often what separates a survivable strategy from a blown-up one.
+
+- **Stop-loss** — cut a loser automatically. Either a fixed percent
+  (`stopLossPct`, e.g. 5%) or **volatility-based** (`atrMult` × ATR — a wider stop
+  when the market is choppy, tighter when calm; the doc recommends ~2 × ATR).
+- **Take-profit** — lock in a winner at a **risk:reward** multiple of the stop
+  distance (`takeProfitRR`, e.g. 2 means aim to make twice what you'd risk).
+- **Position sizing** (`riskPerTradePct`) — instead of going all-in, only risk a
+  fixed slice of equity per trade (e.g. 1%). Size = riskAmount ÷ stop distance, so
+  a wider stop → smaller position. This is **the** classic way pros control risk.
+
+Now exits are checked **intrabar** using each candle's low/high (stop first, then
+take-profit, then the strategy's own SELL signal — stop has priority, the
+conservative choice). We never enter and stop on the same bar.
+
+```ts
+if (options.riskPerTradePct != null && stopDistance > 0) {
+  const riskAmount = cash * options.riskPerTradePct;     // e.g. 1% of equity
+  const sized = (riskAmount * price) / stopDistance;      // fewer units if stop is wide
+  spend = Math.min(cash, sized);                          // never more than we have
+}
+```
+
+**Verified live** on BTC 4h (same EMA-cross strategy): adding a **2×ATR stop, 2:1
+take-profit, and 1%/trade sizing** cut the **max drawdown from 10.2% to 4.7%** (more
+than half) and reduced the loss from −5.5% to −2.9%. Less pain, smaller losses —
+exactly what risk management is for. The generator (`POST /backtests/generate`) can
+apply the same `risk` profile to every candidate.
+
 Next: turning trades + equity into a verdict — [metrics](04-performance-metrics.md).

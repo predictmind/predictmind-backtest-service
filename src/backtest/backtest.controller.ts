@@ -3,7 +3,7 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { RuleSpec } from "../engine/rule-strategy";
 import { GeneratorService } from "../generator/generator.service";
 import { BacktestService } from "./backtest.service";
-import { BenchmarkDto, GenerateDto, RunBacktestDto } from "./dto/run-backtest.dto";
+import { BenchmarkDto, GenerateDto, RunBacktestDto, toEngineOptions } from "./dto/run-backtest.dto";
 
 @ApiTags("backtests")
 @Controller("backtests")
@@ -24,6 +24,7 @@ export class BacktestController {
       dto.params ?? {},
       dto.limit ?? 500,
       dto.rules as unknown as RuleSpec | undefined,
+      toEngineOptions(dto.risk),
     );
   }
 
@@ -45,6 +46,7 @@ export class BacktestController {
       trainFraction: dto.trainFraction,
       minTrades: dto.minTrades,
       topN: dto.topN,
+      engine: toEngineOptions(dto.risk),
     });
   }
 

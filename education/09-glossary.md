@@ -70,5 +70,10 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Overfitting** | A strategy that memorised the past and fails on new data. |
 | **Pure function** | Output depends only on input; no I/O — easy to test. |
 | **Nested create (Prisma)** | Saving a row and its related rows in one operation. |
+| **Stop-loss** | An automatic exit that caps a losing trade (fixed % or ATR-based). |
+| **Take-profit** | An automatic exit that locks in a gain at a risk:reward target. |
+| **Risk:reward (RR)** | How much you aim to make vs risk (RR 2 = target twice the stop distance). |
+| **Position sizing** | Choosing trade size so you risk only a fixed % of equity per trade. |
+| **Intrabar exit** | Exiting mid-candle when price touches a stop/target (uses the candle's low/high). |
 
 Back to the [index](README.md).
