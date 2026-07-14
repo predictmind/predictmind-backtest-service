@@ -37,7 +37,7 @@ export interface GeneratorResult {
   strategies: GeneratedStrategy[];
 }
 
-function evaluate(
+export function evaluate(
   spec: RuleSpec,
   candles: Candle[],
   timeframe: string,

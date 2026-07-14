@@ -3,7 +3,13 @@ import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { RuleSpec } from "../engine/rule-strategy";
 import { GeneratorService } from "../generator/generator.service";
 import { BacktestService } from "./backtest.service";
-import { BenchmarkDto, GenerateDto, RunBacktestDto, toEngineOptions } from "./dto/run-backtest.dto";
+import {
+  BenchmarkDto,
+  GenerateDto,
+  RunBacktestDto,
+  toEngineOptions,
+  WalkForwardDto,
+} from "./dto/run-backtest.dto";
 
 @ApiTags("backtests")
 @Controller("backtests")
@@ -46,6 +52,21 @@ export class BacktestController {
       trainFraction: dto.trainFraction,
       minTrades: dto.minTrades,
       topN: dto.topN,
+      engine: toEngineOptions(dto.risk),
+    });
+  }
+
+  @Post("walkforward")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      "Walk-forward validation: success rate of the selection process across many out-of-sample windows (E13)",
+  })
+  walkForward(@Body() dto: WalkForwardDto) {
+    return this.generator.walkForward(dto.symbol, dto.timeframe, dto.limit ?? 1000, {
+      folds: dto.folds,
+      minTrainFraction: dto.minTrainFraction,
+      minTrades: dto.minTrades,
       engine: toEngineOptions(dto.risk),
     });
   }

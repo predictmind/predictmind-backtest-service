@@ -1,4 +1,4 @@
-# 9. Glossary (the dictionary)
+# 10. Glossary (the dictionary)
 
 Backtesting words used in these notes. General coding words (server, API, database,
 Prisma, module, controller, service, DTO, decorator, Docker, port, CI, east-west
@@ -80,5 +80,10 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Confidence** | How much to trust a score — up with more trades, down with a big in/out-of-sample gap. |
 | **Factor / weight** | One ingredient of PredictScore (e.g. drawdown 20%) and its share. |
 | **Renormalise** | Rescale the remaining weights to sum to 100% when a factor (sentiment) is omitted. |
+| **Walk-forward validation** | Testing the pick-a-strategy process on many consecutive unseen windows to get an honest success rate across market moods (E13). |
+| **Anchored (expanding) window** | Walk-forward where the training block always starts at the beginning and grows each fold. |
+| **Fold / window** | One train-then-test step in walk-forward; each test window is later, unseen data. |
+| **Beat-Buy&Hold rate** | Share of walk-forward windows where the pick did better than simply holding the coin — our headline success metric for spot. |
+| **Regime** | The market's current mood — bull (rising), bear (falling), or sideways. |
 
 Back to the [index](README.md).

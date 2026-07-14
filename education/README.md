@@ -42,6 +42,7 @@ These notes are your textbook. Read in order; each explains **what** the code do
 | 6 | [06-running-and-testing.md](06-running-and-testing.md) | Running it in Docker and the real end-to-end test |
 | 7 | [07-patterns-and-rules.md](07-patterns-and-rules.md) | Candlestick patterns, more indicators, rule-based strategies + precision signals |
 | 8 | [08-strategy-generator.md](08-strategy-generator.md) | The AI strategy generator: search, train/test split, out-of-sample validation (E10) |
-| 9 | [09-glossary.md](09-glossary.md) | Dictionary of every backtesting word |
+| 9 | [09-walk-forward-validation.md](09-walk-forward-validation.md) | Walk-forward validation: an honest success rate across many market regimes (E13) |
+| 10 | [10-glossary.md](10-glossary.md) | Dictionary of every backtesting word |
 
 Start with [01-what-is-backtesting.md](01-what-is-backtesting.md). 🚀

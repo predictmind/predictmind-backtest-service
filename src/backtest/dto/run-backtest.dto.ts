@@ -122,6 +122,57 @@ export class GenerateDto {
   risk?: Record<string, number>;
 }
 
+export class WalkForwardDto {
+  @ApiProperty({ example: "BTC" })
+  @IsString()
+  symbol!: string;
+
+  @ApiProperty({ example: "1d" })
+  @IsString()
+  timeframe!: string;
+
+  @ApiPropertyOptional({ description: "Candles of history to walk through", default: 1000 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(120)
+  @Max(5000)
+  limit?: number;
+
+  @ApiPropertyOptional({ description: "Number of out-of-sample windows", default: 5 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(2)
+  @Max(12)
+  folds?: number;
+
+  @ApiPropertyOptional({ description: "Initial train block fraction (0.3-0.8)", default: 0.5 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.3)
+  @Max(0.8)
+  minTrainFraction?: number;
+
+  @ApiPropertyOptional({ description: "Min in-sample trades to trust a candidate", default: 5 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  minTrades?: number;
+
+  @ApiPropertyOptional({
+    description: "Risk controls applied to every candidate (same shape as backtest risk)",
+    type: "object",
+    additionalProperties: { type: "number" },
+  })
+  @IsOptional()
+  @IsObject()
+  risk?: Record<string, number>;
+}
+
 /** Map a plain risk object (from a request) to engine options. */
 export function toEngineOptions(risk?: Record<string, number>): {
   stopLossPct?: number;

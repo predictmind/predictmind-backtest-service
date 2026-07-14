@@ -137,4 +137,9 @@ backtest and benchmark result now carries a PredictScore too.
   many windows, or a machine-learning ranking model. Those are the next upgrades —
   this is the solid, honest foundation they build on.
 
-Next: the [glossary](09-glossary.md).
+> **Update (E13, added later):** the "walk-forward across many windows" gap above is
+> now filled — see the new [lesson 9](09-walk-forward-validation.md). Parameter
+> optimization and Monte Carlo are still the remaining upgrades.
+
+Next: [walk-forward validation](09-walk-forward-validation.md), then the
+[glossary](10-glossary.md).
