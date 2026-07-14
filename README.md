@@ -22,6 +22,7 @@ walkthroughs are in [`education/`](education/README.md).
 | --- | --- | --- |
 | POST | `/api/v1/backtests` | Run one strategy (`{ symbol, timeframe, strategy, params?, limit? }`) |
 | POST | `/api/v1/backtests/benchmark` | Run all benchmark strategies and rank them |
+| POST | `/api/v1/backtests/generate` | Generate strategies: search the space, rank in-sample, validate out-of-sample (E10) |
 | GET | `/api/v1/backtests?limit=` | List recent backtests |
 | GET | `/api/v1/backtests/:id` | A backtest + its metrics |
 | GET | `/api/v1/backtests/:id/results` | A backtest's performance metrics |

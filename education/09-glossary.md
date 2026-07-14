@@ -1,4 +1,4 @@
-# 8. Glossary (the dictionary)
+# 9. Glossary (the dictionary)
 
 Backtesting words used in these notes. General coding words (server, API, database,
 Prisma, module, controller, service, DTO, decorator, Docker, port, CI, east-west
@@ -52,6 +52,11 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Condition group** | A set of conditions combined with "all" or "any". |
 | **RuleStrategy** | A strategy built from a rule spec — the AI generator's output format. |
 | **Benchmark** | A known strategy we compare against (must beat Buy & Hold). |
+| **Strategy generator** | Searches many candidate strategies, ranks them, validates out-of-sample (E10). |
+| **Candidate space** | All the strategies the generator tries (bases × filters). |
+| **Train / test split** | Tune on an earlier slice, judge on a later unseen slice. |
+| **In-sample / out-of-sample** | Data used to tune / data kept back for the honest test. |
+| **Finalist** | A top-ranked candidate that then gets the out-of-sample test. |
 | **Net profit %** | Overall money gained/lost. |
 | **Win rate** | Share of trades that made money. |
 | **Profit factor** | Total wins ÷ total losses (>1 is profitable). |

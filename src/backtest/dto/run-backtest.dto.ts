@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsInt, IsObject, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsInt, IsNumber, IsObject, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class RunBacktestDto {
   @ApiProperty({ example: "BTC" })
@@ -59,4 +59,46 @@ export class BenchmarkDto {
   @Min(10)
   @Max(5000)
   limit?: number;
+}
+
+export class GenerateDto {
+  @ApiProperty({ example: "BTC" })
+  @IsString()
+  symbol!: string;
+
+  @ApiProperty({ example: "4h" })
+  @IsString()
+  timeframe!: string;
+
+  @ApiPropertyOptional({ description: "Candles to use (train + test)", default: 1000 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(60)
+  @Max(5000)
+  limit?: number;
+
+  @ApiPropertyOptional({ description: "In-sample fraction (0.5-0.9)", default: 0.7 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.5)
+  @Max(0.9)
+  trainFraction?: number;
+
+  @ApiPropertyOptional({ description: "Min trades in-sample to consider a candidate", default: 5 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  minTrades?: number;
+
+  @ApiPropertyOptional({ description: "How many finalists to return", default: 5 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  topN?: number;
 }

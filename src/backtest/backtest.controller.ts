@@ -1,13 +1,17 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { RuleSpec } from "../engine/rule-strategy";
+import { GeneratorService } from "../generator/generator.service";
 import { BacktestService } from "./backtest.service";
-import { BenchmarkDto, RunBacktestDto } from "./dto/run-backtest.dto";
+import { BenchmarkDto, GenerateDto, RunBacktestDto } from "./dto/run-backtest.dto";
 
 @ApiTags("backtests")
 @Controller("backtests")
 export class BacktestController {
-  constructor(private readonly backtest: BacktestService) {}
+  constructor(
+    private readonly backtest: BacktestService,
+    private readonly generator: GeneratorService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.OK)
@@ -28,6 +32,20 @@ export class BacktestController {
   @ApiOperation({ summary: "Run all benchmark strategies and rank them (beat-the-field test)" })
   benchmark(@Body() dto: BenchmarkDto) {
     return this.backtest.benchmark(dto.symbol, dto.timeframe, dto.limit ?? 500);
+  }
+
+  @Post("generate")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      "Generate strategies: search the candidate space, rank in-sample, report out-of-sample (E10)",
+  })
+  generate(@Body() dto: GenerateDto) {
+    return this.generator.generate(dto.symbol, dto.timeframe, dto.limit ?? 1000, {
+      trainFraction: dto.trainFraction,
+      minTrades: dto.minTrades,
+      topN: dto.topN,
+    });
   }
 
   @Get()

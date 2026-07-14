@@ -288,4 +288,4 @@ future-ready). Active addresses **are** free and working.
 **Verified live:** BTC 1d strategy on active-address growth lost **−22.5% vs
 buy&hold −42.8%** in-sample. 40 tests green.
 
-Next: the [glossary](08-glossary.md).
+Next: the [strategy generator](08-strategy-generator.md).
