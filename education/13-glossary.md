@@ -1,4 +1,4 @@
-# 10. Glossary (the dictionary)
+# 13. Glossary (the dictionary)
 
 Backtesting words used in these notes. General coding words (server, API, database,
 Prisma, module, controller, service, DTO, decorator, Docker, port, CI, east-west
@@ -85,5 +85,22 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Fold / window** | One train-then-test step in walk-forward; each test window is later, unseen data. |
 | **Beat-Buy&Hold rate** | Share of walk-forward windows where the pick did better than simply holding the coin — our headline success metric for spot. |
 | **Regime** | The market's current mood — bull (rising), bear (falling), or sideways. |
+| **Take-profit (TP)** | A pre-set price above entry where the trade closes in profit. |
+| **Stop-loss (SL)** | A pre-set price below entry where the trade closes to cap the loss. |
+| **Risk:reward (RR)** | Take-profit distance ÷ stop distance. Low RR = small target = high win rate. |
+| **Trade-quality optimizer** | Searches entry × take-profit × stop-loss for the best win rate (profit-factor guarded). |
+| **Objective** | What the optimizer ranks by: win rate, profit, or profit factor. |
+| **Connors RSI-2** | Buy a very oversold 2-period RSI while price is above its 200 SMA (dip-buying in an uptrend). |
+| **Supertrend** | ATR-band trend filter (green below price = uptrend). |
+| **Donchian breakout** | Buy a new N-candle high (trend/momentum entry). |
+| **Momentum (ROC)** | Rate-of-change entry: buy when price rose enough over a lookback. |
+| **Regime filter** | Only trade when BTC and the coin are above their long-term averages; skip downtrends (spot only). |
+| **Trailing stop** | A stop that follows the peak price up, locking in gains while letting winners run. |
+| **Time-based exit (maxHoldBars)** | Force-close a trade after N candles so capital isn't stuck. |
+| **Cooldown** | Bars to wait after an exit before re-entering, to avoid whipsaw. |
+| **Robustness selection** | Pick the config profitable across the most training sub-periods (not the single peak). |
+| **Portfolio backtest** | Trade a basket of coins from one shared balance; diversification smooths the ride. |
+| **Look-ahead bias** | Peeking at future/test data when choosing a strategy — makes any backtest lie. |
+| **Holdout** | A block of recent data kept completely untouched during design, used only to judge honestly. |
 
 Back to the [index](README.md).

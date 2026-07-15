@@ -48,6 +48,9 @@ describe("walkForward", () => {
     // counts are consistent with the per-fold flags
     expect(r.beatBuyHoldWindows).toBe(r.results.filter((f) => f.beatsBuyHold).length);
     expect(r.profitableWindows).toBe(r.results.filter((f) => f.profitable).length);
+    expect(r.beatRiskAdjustedWindows).toBe(r.results.filter((f) => f.beatsRiskAdjusted).length);
+    expect(r.beatRiskAdjustedRatePct).toBeGreaterThanOrEqual(0);
+    expect(r.beatRiskAdjustedRatePct).toBeLessThanOrEqual(100);
   });
 
   it("clamps folds into a sane range", () => {

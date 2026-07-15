@@ -164,6 +164,44 @@ export function atr(candles: Candle[], period = 14): (number | null)[] {
   return sma(trueRanges, period);
 }
 
+/**
+ * Supertrend direction (Olivier Seban). An ATR-band trend filter: returns `true`
+ * when the market is in an uptrend (close above the trailing Supertrend line),
+ * `false` otherwise. `period` = ATR length, `mult` = band width.
+ */
+export function supertrend(candles: Candle[], period = 10, mult = 3): boolean[] {
+  const atrArr = atr(candles, period);
+  const up: boolean[] = [];
+  let finalUpperPrev = Infinity;
+  let finalLowerPrev = -Infinity;
+  let trendUpPrev = true;
+  for (let i = 0; i < candles.length; i++) {
+    const a = atrArr[i];
+    const c = candles[i];
+    if (a === null) {
+      up.push(false);
+      finalUpperPrev = Infinity;
+      finalLowerPrev = -Infinity;
+      continue;
+    }
+    const hl2 = (c.high + c.low) / 2;
+    const basicUpper = hl2 + mult * a;
+    const basicLower = hl2 - mult * a;
+    const prevClose = i > 0 ? candles[i - 1].close : c.close;
+    const finalUpper =
+      basicUpper < finalUpperPrev || prevClose > finalUpperPrev ? basicUpper : finalUpperPrev;
+    const finalLower =
+      basicLower > finalLowerPrev || prevClose < finalLowerPrev ? basicLower : finalLowerPrev;
+    // Stay in the current trend until the close breaks the opposite band.
+    const trendUp: boolean = trendUpPrev ? c.close >= finalLower : c.close > finalUpper;
+    up.push(trendUp);
+    finalUpperPrev = finalUpper;
+    finalLowerPrev = finalLower;
+    trendUpPrev = trendUp;
+  }
+  return up;
+}
+
 /** Stochastic %K: where the close sits within the recent high-low range (0-100). */
 export function stochasticK(candles: Candle[], period = 14): (number | null)[] {
   const out: (number | null)[] = [];

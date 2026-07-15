@@ -29,6 +29,13 @@ export interface EngineOptions {
   takeProfitRR?: number;
   /** Risk this fraction of equity per trade (position sizing). Needs a stop. */
   riskPerTradePct?: number;
+  /** Trailing stop: once in profit, trail the stop this fraction below the peak,
+   *  locking in gains while letting winners run. */
+  trailingStopPct?: number;
+  /** Time-based exit: force-close a trade after this many candles (no dead money). */
+  maxHoldBars?: number;
+  /** After an exit, wait this many candles before entering again (avoid whipsaw). */
+  cooldownBars?: number;
 }
 
 const DEFAULT_FEE = 0.001; // 0.1% per side, typical spot taker fee
@@ -53,11 +60,13 @@ export function runBacktest(
   let entryIndex = 0;
   let stopPrice: number | null = null;
   let takeProfitPrice: number | null = null;
+  let highSinceEntry = 0; // peak price since entry (for the trailing stop)
+  let lastExitIndex = -Infinity; // for the post-exit cooldown
 
   const trades: Trade[] = [];
   const equityCurve: number[] = [];
 
-  const closePosition = (exitPrice: number, exitTime: Date, bars: number): void => {
+  const closePosition = (exitPrice: number, exitTime: Date, bars: number, exitIndex: number): void => {
     const proceeds = units * exitPrice * (1 - fee);
     trades.push(makeTrade(entryTime, entryPrice, exitTime, exitPrice, entryCost, proceeds, bars));
     cash += proceeds;
@@ -65,6 +74,7 @@ export function runBacktest(
     inPosition = false;
     stopPrice = null;
     takeProfitPrice = null;
+    lastExitIndex = exitIndex;
   };
 
   for (let i = 0; i < candles.length; i++) {
@@ -72,22 +82,33 @@ export function runBacktest(
     const price = candle.close;
     const signal = signals[i];
 
-    // 1) Intrabar stop-loss / take-profit (not on the entry bar). Stop first.
+    // 1) Intrabar exits (not on the entry bar): trailing/fixed stop, then take-
+    //    profit, then the time-based max-hold exit.
     if (inPosition && i > entryIndex) {
-      if (stopPrice !== null && candle.low <= stopPrice) {
-        closePosition(stopPrice, candle.openTime, i - entryIndex);
+      if (candle.high > highSinceEntry) highSinceEntry = candle.high;
+      // Effective stop = the higher of the fixed stop and the trailing stop.
+      let effStop = stopPrice;
+      if (options.trailingStopPct != null && highSinceEntry > 0) {
+        const trail = highSinceEntry * (1 - options.trailingStopPct);
+        effStop = effStop != null ? Math.max(effStop, trail) : trail;
+      }
+      if (effStop !== null && candle.low <= effStop) {
+        closePosition(effStop, candle.openTime, i - entryIndex, i);
       } else if (takeProfitPrice !== null && candle.high >= takeProfitPrice) {
-        closePosition(takeProfitPrice, candle.openTime, i - entryIndex);
+        closePosition(takeProfitPrice, candle.openTime, i - entryIndex, i);
+      } else if (options.maxHoldBars != null && i - entryIndex >= options.maxHoldBars) {
+        closePosition(price, candle.openTime, i - entryIndex, i);
       }
     }
 
     // 2) Signal-based exit (at close).
     if (inPosition && signal === "SELL") {
-      closePosition(price, candle.openTime, i - entryIndex);
+      closePosition(price, candle.openTime, i - entryIndex, i);
     }
 
-    // 3) Entry.
-    if (!inPosition && signal === "BUY") {
+    // 3) Entry (respecting the post-exit cooldown).
+    const cooldownOk = i - lastExitIndex >= (options.cooldownBars ?? 0);
+    if (!inPosition && signal === "BUY" && cooldownOk) {
       const stopDistance =
         atr && atr[i] != null
           ? (options.atrMult as number) * (atr[i] as number)
@@ -110,6 +131,7 @@ export function runBacktest(
       entryPrice = price;
       entryTime = candle.openTime;
       entryIndex = i;
+      highSinceEntry = price;
       stopPrice = stopDistance != null ? price - stopDistance : null;
       takeProfitPrice =
         stopDistance != null && options.takeProfitRR != null
@@ -123,7 +145,7 @@ export function runBacktest(
   // Close any open position at the last candle so trade stats are complete.
   if (inPosition && candles.length > 0) {
     const last = candles[candles.length - 1];
-    closePosition(last.close, last.openTime, candles.length - 1 - entryIndex);
+    closePosition(last.close, last.openTime, candles.length - 1 - entryIndex, candles.length - 1);
     if (equityCurve.length > 0) {
       equityCurve.pop();
       equityCurve.push(cash);

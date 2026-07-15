@@ -17,8 +17,9 @@
  * turn instead of a single lucky slice.
  */
 
-import { EngineOptions } from "../engine/backtest-engine";
-import { Candle } from "../engine/types";
+import { EngineOptions, runBacktest } from "../engine/backtest-engine";
+import { computeMetrics, Metrics } from "../engine/metrics";
+import { Candle, Signal } from "../engine/types";
 import { buildCandidateSpecs } from "./candidate-space";
 import { evaluate } from "./generator";
 
@@ -38,8 +39,18 @@ export interface FoldResult {
   testBuyHoldPct: number;
   testWinRate: number;
   testTrades: number;
+  testMaxDrawdownPct: number;
+  buyHoldMaxDrawdownPct: number;
   profitable: boolean; // net > 0
-  beatsBuyHold: boolean; // net > Buy & Hold on the same window
+  beatsBuyHold: boolean; // net > Buy & Hold on the same window (raw return)
+  /**
+   * Risk-adjusted success (definition B): the strategy delivered a better
+   * return-per-unit-of-pain than Buy & Hold — either a higher Sharpe, or (when it
+   * stayed in cash through a crash) simply far less drawdown without losing money.
+   * This is the fair metric for long-only spot, which cannot out-return a fully
+   * invested Buy & Hold during a parabolic bull run but CAN sidestep its crashes.
+   */
+  beatsRiskAdjusted: boolean;
 }
 
 export interface WalkForwardResult {
@@ -47,8 +58,11 @@ export interface WalkForwardResult {
   windowsEvaluated: number;
   profitableWindows: number;
   beatBuyHoldWindows: number;
+  beatRiskAdjustedWindows: number;
   profitableRatePct: number;
   beatBuyHoldRatePct: number;
+  /** The headline for spot: how often we won on a risk-adjusted basis. */
+  beatRiskAdjustedRatePct: number;
   avgOosReturnPct: number;
   avgBuyHoldPct: number;
   results: FoldResult[];
@@ -58,6 +72,25 @@ function buyHoldPct(candles: Candle[]): number {
   const first = candles[0]?.close ?? 0;
   const last = candles[candles.length - 1]?.close ?? 0;
   return first > 0 ? ((last - first) / first) * 100 : 0;
+}
+
+/** Buy & Hold metrics for a window: buy on the first candle, hold to the end. */
+function buyHoldMetrics(candles: Candle[], timeframe: string): Metrics {
+  const signals: Signal[] = candles.map((_, i) => (i === 0 ? "BUY" : "HOLD"));
+  return computeMetrics(runBacktest(candles, signals, {}), candles, timeframe);
+}
+
+/**
+ * Risk-adjusted verdict for one window. The strategy "wins" if it earns more
+ * return per unit of risk than Buy & Hold. We use the Sharpe ratio (return vs
+ * volatility); when the strategy sat in cash (no trades, sharpe 0) it still wins
+ * if Buy & Hold's Sharpe was negative — i.e. it dodged a losing market.
+ */
+function beatsRiskAdjusted(strategy: Metrics, bh: Metrics): boolean {
+  if (strategy.tradesCount === 0) return bh.sharpe <= 0; // cash beats a losing market
+  if (strategy.sharpe !== bh.sharpe) return strategy.sharpe > bh.sharpe;
+  // Tie-break on pain: same Sharpe but a smaller drawdown is the better ride.
+  return strategy.maxDrawdownPct < bh.maxDrawdownPct;
 }
 
 function mean(xs: number[]): number {
@@ -97,16 +130,24 @@ export function walkForward(
     if (test.length < 10 || train.length < 60) continue;
 
     // Pick the best candidate on the TRAIN slice (same rule as the generator:
-    // enough trades, then rank by risk-adjusted return).
+    // enough trades, then rank by risk-adjusted return). Each candidate uses its
+    // own risk preset (engine), merged over the request-level engine.
     const scored = candidates
-      .map((c) => ({ label: c.label, spec: c.spec, m: evaluate(c.spec, train, timeframe, engine) }))
+      .map((c) => ({
+        label: c.label,
+        spec: c.spec,
+        engine: { ...engine, ...c.engine },
+        m: evaluate(c.spec, train, timeframe, { ...engine, ...c.engine }),
+      }))
       .filter((c) => c.m.tradesCount >= minTrades)
       .sort((a, b) => b.m.sharpe - a.m.sharpe || b.m.netProfitPct - a.m.netProfitPct);
 
     const bh = buyHoldPct(test);
+    const bhm = buyHoldMetrics(test, timeframe);
 
     if (scored.length === 0) {
       // Nothing qualified — the system would place no trades and sit in cash (0%).
+      const cash: Metrics = { ...bhm, netProfitPct: 0, sharpe: 0, maxDrawdownPct: 0, tradesCount: 0 };
       results.push({
         fold: k + 1,
         trainCandles: train.length,
@@ -116,14 +157,17 @@ export function walkForward(
         testBuyHoldPct: round(bh),
         testWinRate: 0,
         testTrades: 0,
+        testMaxDrawdownPct: 0,
+        buyHoldMaxDrawdownPct: bhm.maxDrawdownPct,
         profitable: false,
         beatsBuyHold: 0 > bh,
+        beatsRiskAdjusted: beatsRiskAdjusted(cash, bhm),
       });
       continue;
     }
 
     const pick = scored[0];
-    const t = evaluate(pick.spec, test, timeframe, engine);
+    const t = evaluate(pick.spec, test, timeframe, pick.engine);
     results.push({
       fold: k + 1,
       trainCandles: train.length,
@@ -133,23 +177,31 @@ export function walkForward(
       testBuyHoldPct: t.buyHoldPct,
       testWinRate: t.winRate,
       testTrades: t.tradesCount,
+      testMaxDrawdownPct: t.maxDrawdownPct,
+      buyHoldMaxDrawdownPct: bhm.maxDrawdownPct,
       profitable: t.netProfitPct > 0,
       beatsBuyHold: t.netProfitPct > t.buyHoldPct,
+      beatsRiskAdjusted: beatsRiskAdjusted(t, bhm),
     });
   }
 
   const windowsEvaluated = results.length;
   const profitableWindows = results.filter((r) => r.profitable).length;
   const beatBuyHoldWindows = results.filter((r) => r.beatsBuyHold).length;
+  const beatRiskAdjustedWindows = results.filter((r) => r.beatsRiskAdjusted).length;
 
   return {
     folds,
     windowsEvaluated,
     profitableWindows,
     beatBuyHoldWindows,
+    beatRiskAdjustedWindows,
     profitableRatePct: windowsEvaluated ? round((profitableWindows / windowsEvaluated) * 100, 2) : 0,
     beatBuyHoldRatePct: windowsEvaluated
       ? round((beatBuyHoldWindows / windowsEvaluated) * 100, 2)
+      : 0,
+    beatRiskAdjustedRatePct: windowsEvaluated
+      ? round((beatRiskAdjustedWindows / windowsEvaluated) * 100, 2)
       : 0,
     avgOosReturnPct: round(mean(results.map((r) => r.testNetProfitPct)), 4),
     avgBuyHoldPct: round(mean(results.map((r) => r.testBuyHoldPct)), 4),

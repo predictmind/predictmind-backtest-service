@@ -6,9 +6,12 @@ import { BacktestService } from "./backtest.service";
 import {
   BenchmarkDto,
   GenerateDto,
+  OptimizeDto,
+  PortfolioDto,
   RunBacktestDto,
   toEngineOptions,
   WalkForwardDto,
+  WalkForwardOptimizeDto,
 } from "./dto/run-backtest.dto";
 
 @ApiTags("backtests")
@@ -68,6 +71,61 @@ export class BacktestController {
       minTrainFraction: dto.minTrainFraction,
       minTrades: dto.minTrades,
       engine: toEngineOptions(dto.risk),
+    });
+  }
+
+  @Post("optimize")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      "Trade-quality optimizer: best entry + take-profit + stop-loss by out-of-sample win rate (PF>=1)",
+  })
+  optimize(@Body() dto: OptimizeDto) {
+    return this.generator.optimizeTrades(dto.symbol, dto.timeframe, dto.limit ?? 2000, {
+      trainFraction: dto.trainFraction,
+      minTrades: dto.minTrades,
+      minProfitFactor: dto.minProfitFactor,
+      topN: dto.topN,
+      objective: dto.objective,
+    });
+  }
+
+  @Post("optimize/walkforward")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      "Walk-forward trade optimizer: win rate across ALL windows (re-optimised each window) + losing windows",
+  })
+  optimizeWalkForward(@Body() dto: WalkForwardOptimizeDto) {
+    return this.generator.walkForwardOptimize(dto.symbol, dto.timeframe, dto.limit ?? 5000, {
+      folds: dto.folds,
+      minTrainFraction: dto.minTrainFraction,
+      minTrades: dto.minTrades,
+      minProfitFactor: dto.minProfitFactor,
+      stopLossPcts: dto.stopLossPcts,
+      takeProfitRRs: dto.takeProfitRRs,
+      objective: dto.objective,
+    });
+  }
+
+  @Post("portfolio")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Portfolio backtest: trade a basket of coins together (best OOS config each)",
+  })
+  portfolio(@Body() dto: PortfolioDto) {
+    return this.generator.portfolio(dto.symbols, dto.timeframe, dto.limit ?? 5000, {
+      trainFraction: dto.trainFraction,
+      minProfitFactor: dto.minProfitFactor,
+      objective: dto.objective,
+      robust: dto.robust,
+      regimeFilter: dto.regimeFilter,
+      trailingStopPct: dto.trailingStopPct,
+      maxHoldBars: dto.maxHoldBars,
+      cooldownBars: dto.cooldownBars,
+      allocFraction: dto.allocFraction,
+      stopLossPcts: dto.stopLossPcts,
+      takeProfitRRs: dto.takeProfitRRs,
     });
   }
 

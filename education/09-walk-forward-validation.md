@@ -127,4 +127,4 @@ actually believe, because no window was cherry-picked.
   test luck. Those are the next robustness upgrades — this is the honest foundation
   they build on.
 
-Next: the [glossary](10-glossary.md).
+Next: [the trade-quality optimizer](10-trade-quality-optimizer.md).

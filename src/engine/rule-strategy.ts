@@ -9,7 +9,7 @@
  * when flat, only sells when holding).
  */
 
-import { bollinger, ema, macd, rsi, sma, stochasticK } from "./indicators";
+import { bollinger, ema, macd, rsi, sma, stochasticK, supertrend } from "./indicators";
 import { detectPattern } from "./patterns";
 import { Candle, Signal, Strategy } from "./types";
 
@@ -26,6 +26,9 @@ export type Condition =
   | { type: "long_short_ratio"; op: Comparator; value: number }
   | { type: "fear_greed"; op: Comparator; value: number }
   | { type: "btc_trend"; period?: number; dir: "above" | "below" }
+  | { type: "breakout"; period?: number; dir: "up" | "down" }
+  | { type: "roc"; period?: number; op: Comparator; value: number }
+  | { type: "supertrend"; period?: number; mult?: number; dir: "up" | "down" }
   | { type: "mvrv"; op: Comparator; value: number }
   | { type: "active_addr_change"; period?: number; op: Comparator; value: number }
   | { type: "pattern"; name: string };
@@ -160,6 +163,38 @@ function conditionSeries(cond: Condition, candles: Candle[]): boolean[] {
         if (btcNow == null || avg === null || Number.isNaN(avg)) return false;
         return cond.dir === "above" ? btcNow > avg : btcNow < avg;
       });
+    }
+    case "breakout": {
+      // Trend/breakout entry: price closes above the highest high (or below the
+      // lowest low) of the PRIOR `period` candles — a classic Donchian channel
+      // breakout. Suits trending coins where dips-buying (mean reversion) fails.
+      const period = cond.period && cond.period > 0 ? cond.period : 20;
+      return candles.map((c, i) => {
+        if (i < period) return false;
+        let hi = -Infinity;
+        let lo = Infinity;
+        for (let j = i - period; j < i; j++) {
+          if (candles[j].high > hi) hi = candles[j].high;
+          if (candles[j].low < lo) lo = candles[j].low;
+        }
+        return cond.dir === "up" ? c.close > hi : c.close < lo;
+      });
+    }
+    case "roc": {
+      // Rate of change: percent price move over `period` candles. Momentum entry
+      // (e.g. roc > 3 = up more than 3% over the lookback).
+      const period = cond.period && cond.period > 0 ? cond.period : 10;
+      return candles.map((c, i) => {
+        if (i < period) return false;
+        const prev = candles[i - period].close;
+        if (prev <= 0) return false;
+        return compare(((c.close - prev) / prev) * 100, cond.op, cond.value);
+      });
+    }
+    case "supertrend": {
+      // ATR-band trend filter (Seban). dir "up" = uptrend (close above the line).
+      const up = supertrend(candles, cond.period ?? 10, cond.mult ?? 3);
+      return up.map((isUp) => (cond.dir === "up" ? isUp : !isUp));
     }
     case "mvrv":
       // On-chain valuation (market cap / realized cap). High = lots of unrealised

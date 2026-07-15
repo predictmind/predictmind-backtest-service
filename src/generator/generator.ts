@@ -65,8 +65,10 @@ export function generateAndRank(
   const candidates = buildCandidateSpecs();
 
   // 1) Evaluate every candidate in-sample; keep ones that trade enough.
+  //    Each candidate carries its own risk preset (engine); merge it over the
+  //    request-level engine so a candidate's stop-loss/take-profit is honoured.
   const scored = candidates
-    .map((c) => ({ ...c, train: evaluate(c.spec, train, timeframe, engine) }))
+    .map((c) => ({ ...c, train: evaluate(c.spec, train, timeframe, { ...engine, ...c.engine }) }))
     .filter((c) => c.train.tradesCount >= minTrades);
 
   // 2) Rank by risk-adjusted return (Sharpe), tie-break on net profit.
@@ -76,7 +78,7 @@ export function generateAndRank(
 
   // 3) Take the finalists, measure them out-of-sample, and PredictScore them.
   const strategies: GeneratedStrategy[] = scored.slice(0, topN).map((c) => {
-    const testMetrics = evaluate(c.spec, candles.slice(split), timeframe, engine);
+    const testMetrics = evaluate(c.spec, candles.slice(split), timeframe, { ...engine, ...c.engine });
     return {
       label: c.label,
       spec: c.spec,

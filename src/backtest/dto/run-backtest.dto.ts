@@ -1,6 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsInt, IsNumber, IsObject, IsOptional, IsString, Max, Min } from "class-validator";
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from "class-validator";
+
+const OBJECTIVES = ["winRate", "profit", "profitFactor"] as const;
 
 export class RunBacktestDto {
   @ApiProperty({ example: "BTC" })
@@ -120,6 +133,222 @@ export class GenerateDto {
   @IsOptional()
   @IsObject()
   risk?: Record<string, number>;
+}
+
+export class OptimizeDto {
+  @ApiProperty({ example: "BTC" })
+  @IsString()
+  symbol!: string;
+
+  @ApiProperty({ example: "4h" })
+  @IsString()
+  timeframe!: string;
+
+  @ApiPropertyOptional({ description: "Candles to use (train + test)", default: 2000 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(120)
+  @Max(5000)
+  limit?: number;
+
+  @ApiPropertyOptional({ description: "In-sample fraction (0.5-0.9)", default: 0.7 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.5)
+  @Max(0.9)
+  trainFraction?: number;
+
+  @ApiPropertyOptional({ description: "Min trades per slice to trust a config", default: 8 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(3)
+  @Max(200)
+  minTrades?: number;
+
+  @ApiPropertyOptional({ description: "Min profit factor guard (winners/losers)", default: 1 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.5)
+  @Max(5)
+  minProfitFactor?: number;
+
+  @ApiPropertyOptional({ description: "How many top configs to return", default: 5 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  topN?: number;
+
+  @ApiPropertyOptional({ description: "Rank by", enum: OBJECTIVES, default: "winRate" })
+  @IsOptional()
+  @IsIn(OBJECTIVES as unknown as string[])
+  objective?: (typeof OBJECTIVES)[number];
+}
+
+export class PortfolioDto {
+  @ApiProperty({ description: "Coins to trade as a basket", type: [String], example: ["DOT", "XRP", "BNB"] })
+  @IsArray()
+  @IsString({ each: true })
+  symbols!: string[];
+
+  @ApiProperty({ example: "4h" })
+  @IsString()
+  timeframe!: string;
+
+  @ApiPropertyOptional({ description: "Candles per coin (last ~5-6y)", default: 5000 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(300)
+  @Max(5000)
+  limit?: number;
+
+  @ApiPropertyOptional({ description: "In-sample fraction", default: 0.6 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.5)
+  @Max(0.9)
+  trainFraction?: number;
+
+  @ApiPropertyOptional({ description: "Min profit factor guard", default: 1.1 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.5)
+  @Max(5)
+  minProfitFactor?: number;
+
+  @ApiPropertyOptional({ description: "Rank by", enum: OBJECTIVES, default: "winRate" })
+  @IsOptional()
+  @IsIn(OBJECTIVES as unknown as string[])
+  objective?: (typeof OBJECTIVES)[number];
+
+  @ApiPropertyOptional({ description: "Robustness-first selection (consistent across train sub-periods)", default: false })
+  @IsOptional()
+  @IsBoolean()
+  robust?: boolean;
+
+  @ApiPropertyOptional({ description: "Only trade when market (BTC + coin) is in an uptrend", default: false })
+  @IsOptional()
+  @IsBoolean()
+  regimeFilter?: boolean;
+
+  @ApiPropertyOptional({ description: "Trailing stop fraction (e.g. 0.05 = trail 5% below peak)" })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.005)
+  @Max(0.5)
+  trailingStopPct?: number;
+
+  @ApiPropertyOptional({ description: "Time-based exit after N candles" })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  maxHoldBars?: number;
+
+  @ApiPropertyOptional({ description: "Cooldown candles after an exit before re-entering" })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  cooldownBars?: number;
+
+  @ApiPropertyOptional({ description: "Fraction of balance risked per trade", default: 0.1 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.01)
+  @Max(1)
+  allocFraction?: number;
+
+  @ApiPropertyOptional({ description: "Stop-loss widths to search (fractions)", type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  stopLossPcts?: number[];
+
+  @ApiPropertyOptional({ description: "Take-profit ratios (TP = RR x stop)", type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  takeProfitRRs?: number[];
+}
+
+export class WalkForwardOptimizeDto {
+  @ApiProperty({ example: "DOGE" })
+  @IsString()
+  symbol!: string;
+
+  @ApiProperty({ example: "4h" })
+  @IsString()
+  timeframe!: string;
+
+  @ApiPropertyOptional({ description: "Candles of history to walk through", default: 5000 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(200)
+  @Max(5000)
+  limit?: number;
+
+  @ApiPropertyOptional({ description: "Number of out-of-sample windows", default: 6 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(2)
+  @Max(12)
+  folds?: number;
+
+  @ApiPropertyOptional({ description: "Initial train block fraction (0.3-0.8)", default: 0.4 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.3)
+  @Max(0.8)
+  minTrainFraction?: number;
+
+  @ApiPropertyOptional({ description: "Min trades per slice", default: 5 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(3)
+  @Max(200)
+  minTrades?: number;
+
+  @ApiPropertyOptional({ description: "Min profit factor guard", default: 1.1 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.5)
+  @Max(5)
+  minProfitFactor?: number;
+
+  @ApiPropertyOptional({ description: "Stop-loss widths to search (fractions)", type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  stopLossPcts?: number[];
+
+  @ApiPropertyOptional({ description: "Take-profit ratios (TP = RR x stop)", type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  takeProfitRRs?: number[];
+
+  @ApiPropertyOptional({ description: "Rank by", enum: OBJECTIVES, default: "winRate" })
+  @IsOptional()
+  @IsIn(OBJECTIVES as unknown as string[])
+  objective?: (typeof OBJECTIVES)[number];
 }
 
 export class WalkForwardDto {
