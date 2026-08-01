@@ -261,13 +261,18 @@ export class LivePortfolioDto {
   @Min(1)
   initialCapital?: number;
 
-  @ApiPropertyOptional({ description: "Fixed slice per trade = fraction of starting balance", default: 0.1 })
+  @ApiPropertyOptional({ description: "Slice per trade = fraction of balance", default: 0.1 })
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsNumber()
   @Min(0.02)
   @Max(1)
   allocFraction?: number;
+
+  @ApiPropertyOptional({ description: "Reinvest profits: size each trade off the CURRENT balance", default: false })
+  @IsOptional()
+  @IsBoolean()
+  compound?: boolean;
 }
 
 export class PortfolioDto {

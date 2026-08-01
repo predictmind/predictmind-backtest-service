@@ -74,7 +74,8 @@ interface SimTrade {
 
 export interface LivePortfolioOptions {
   initialCapital?: number;
-  allocFraction?: number; // fixed slice per trade = fraction of the INITIAL capital
+  allocFraction?: number; // slice per trade = fraction of capital
+  compound?: boolean; // if true, slice = fraction of CURRENT balance (reinvest profits)
 }
 
 export interface LivePortfolioResult {
@@ -110,7 +111,8 @@ export function simulateLivePortfolio(
 ): Omit<LivePortfolioResult, "perCoin"> {
   const initialCapital = options.initialCapital ?? 10_000;
   const allocFraction = Math.min(Math.max(options.allocFraction ?? 0.1, 0.02), 1);
-  const alloc = initialCapital * allocFraction; // fixed rupee size per trade
+  const compound = options.compound ?? false;
+  const fixedAlloc = initialCapital * allocFraction; // used when not compounding
 
   // Build a time-ordered event stream: exits before entries at the same instant
   // (free cash first, then spend it).
@@ -130,25 +132,31 @@ export function simulateLivePortfolio(
   let skipped = 0;
   let peak = initialCapital;
   let maxDd = 0;
-  const openIds = new Set<number>();
+  // Per-open-trade slice amount (so exits return the exact slice they locked —
+  // essential once slices vary with a compounding balance).
+  const openAlloc = new Map<number, number>();
 
   for (const ev of events) {
     if (ev.kind === "entry") {
-      if (cash >= alloc) {
+      // Compounding: size each trade off the CURRENT balance, so profits get
+      // reinvested and positions grow as the account grows.
+      const alloc = compound ? (cash + locked) * allocFraction : fixedAlloc;
+      if (cash >= alloc && alloc > 0) {
         cash -= alloc;
         locked += alloc;
         open++;
         taken++;
-        openIds.add(ev.id);
+        openAlloc.set(ev.id, alloc);
         if (open > maxConcurrent) maxConcurrent = open;
       } else {
         skipped++;
       }
     } else {
-      if (!openIds.has(ev.id)) continue; // this trade was skipped at entry
-      openIds.delete(ev.id);
-      cash += alloc * (1 + ev.pnlPct / 100); // return the slice + its P&L
-      locked -= alloc;
+      const a = openAlloc.get(ev.id);
+      if (a == null) continue; // this trade was skipped at entry
+      openAlloc.delete(ev.id);
+      cash += a * (1 + ev.pnlPct / 100); // return the slice + its P&L
+      locked -= a;
       open--;
     }
     const equity = cash + locked; // locked valued at cost (conservative)
@@ -164,13 +172,14 @@ export function simulateLivePortfolio(
     initialCapital,
     finalEquity: round(finalEquity),
     netReturnPct: round(((finalEquity - initialCapital) / initialCapital) * 100),
-    allocPerTrade: round(alloc),
+    allocPerTrade: round(compound ? initialCapital * allocFraction : fixedAlloc),
     tradesTaken: taken,
     tradesSkippedNoCash: skipped,
     maxConcurrentPositions: maxConcurrent,
     maxDrawdownPct: round(maxDd),
   };
 }
+// allocPerTrade is reported by the service from the first slice size.
 
 function round(v: number, dp = 2): number {
   if (!Number.isFinite(v)) return 0;

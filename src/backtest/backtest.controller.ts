@@ -148,7 +148,7 @@ export class BacktestController {
       dto.breakoutCoins,
       dto.timeframe,
       dto.limit ?? 930,
-      { initialCapital: dto.initialCapital, allocFraction: dto.allocFraction },
+      { initialCapital: dto.initialCapital, allocFraction: dto.allocFraction, compound: dto.compound },
     );
   }
 
