@@ -9,7 +9,7 @@
  * when flat, only sells when holding).
  */
 
-import { bollinger, ema, macd, rsi, sma, stochasticK, supertrend } from "./indicators";
+import { adx, bollinger, ema, macd, rsi, sma, stochasticK, supertrend } from "./indicators";
 import { detectPattern } from "./patterns";
 import { Candle, Signal, Strategy } from "./types";
 
@@ -29,6 +29,7 @@ export type Condition =
   | { type: "breakout"; period?: number; dir: "up" | "down" }
   | { type: "roc"; period?: number; op: Comparator; value: number }
   | { type: "supertrend"; period?: number; mult?: number; dir: "up" | "down" }
+  | { type: "adx"; period?: number; op: Comparator; value: number }
   | { type: "mvrv"; op: Comparator; value: number }
   | { type: "active_addr_change"; period?: number; op: Comparator; value: number }
   | { type: "pattern"; name: string };
@@ -195,6 +196,11 @@ function conditionSeries(cond: Condition, candles: Candle[]): boolean[] {
       // ATR-band trend filter (Seban). dir "up" = uptrend (close above the line).
       const up = supertrend(candles, cond.period ?? 10, cond.mult ?? 3);
       return up.map((isUp) => (cond.dir === "up" ? isUp : !isUp));
+    }
+    case "adx": {
+      // Trend-strength filter: adx > 25 = strong trend, < 20 = chop.
+      const a = adx(candles, cond.period ?? 14);
+      return a.map((v) => (v != null ? compare(v, cond.op, cond.value) : false));
     }
     case "mvrv":
       // On-chain valuation (market cap / realized cap). High = lots of unrealised

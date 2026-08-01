@@ -137,6 +137,24 @@ function bases(): Base[] {
     });
   }
 
+  // EMA pullback-in-trend (the pros' high-win-rate workhorse): in an uptrend
+  // (fast EMA > slow EMA) buy a MILD dip (RSI-14 moderately low), exit when
+  // momentum is back up. Fires far more often than a deep RSI-2 dip → more trades.
+  for (const [fast, slow, dip] of [
+    [20, 50, 45],
+    [20, 50, 40],
+    [50, 200, 50],
+  ]) {
+    out.push({
+      label: `ema_pullback(${fast}/${slow},rsi<${dip})`,
+      entry: [
+        { type: "ma", kind: "ema", fast, slow, op: "gt" },
+        { type: "indicator", name: "rsi", period: 14, op: "lt", value: dip },
+      ],
+      exit: [{ type: "indicator", name: "rsi", period: 14, op: "gt", value: 65 }],
+    });
+  }
+
   return out;
 }
 
@@ -156,6 +174,8 @@ function gates(): { label: string; cond: Condition | null }[] {
     { label: "buy_pressure", cond: { type: "order_flow", period: 3, op: "gt", value: 0.52 } },
     // Confirmation: market in fear (contrarian entry).
     { label: "fear", cond: { type: "fear_greed", op: "lt", value: 45 } },
+    // Trend-strength: only enter when ADX confirms a genuine (not choppy) trend.
+    { label: "adx_strong", cond: { type: "adx", period: 14, op: "gt", value: 22 } },
   ];
 }
 

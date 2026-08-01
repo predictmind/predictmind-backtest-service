@@ -165,6 +165,77 @@ export function atr(candles: Candle[], period = 14): (number | null)[] {
 }
 
 /**
+ * ADX (Average Directional Index, Wilder). Measures TREND STRENGTH (0-100),
+ * regardless of direction: below ~20 = choppy/no trend, above ~25 = strong trend.
+ * Pros use it as a filter — only take trend trades when ADX confirms a real trend.
+ */
+export function adx(candles: Candle[], period = 14): (number | null)[] {
+  const n = candles.length;
+  const out: (number | null)[] = new Array(n).fill(null);
+  if (n < period * 2) return out;
+
+  const trs: number[] = [];
+  const plusDM: number[] = [];
+  const minusDM: number[] = [];
+  for (let i = 0; i < n; i++) {
+    if (i === 0) {
+      trs.push(candles[0].high - candles[0].low);
+      plusDM.push(0);
+      minusDM.push(0);
+      continue;
+    }
+    const up = candles[i].high - candles[i - 1].high;
+    const down = candles[i - 1].low - candles[i].low;
+    plusDM.push(up > down && up > 0 ? up : 0);
+    minusDM.push(down > up && down > 0 ? down : 0);
+    const tr = Math.max(
+      candles[i].high - candles[i].low,
+      Math.abs(candles[i].high - candles[i - 1].close),
+      Math.abs(candles[i].low - candles[i - 1].close),
+    );
+    trs.push(tr);
+  }
+
+  // Wilder smoothing of TR, +DM, -DM, then DX, then ADX.
+  let trS = 0;
+  let pS = 0;
+  let mS = 0;
+  const dx: number[] = new Array(n).fill(NaN);
+  for (let i = 1; i < n; i++) {
+    if (i <= period) {
+      trS += trs[i];
+      pS += plusDM[i];
+      mS += minusDM[i];
+    } else {
+      trS = trS - trS / period + trs[i];
+      pS = pS - pS / period + plusDM[i];
+      mS = mS - mS / period + minusDM[i];
+    }
+    if (i >= period && trS > 0) {
+      const plusDI = (100 * pS) / trS;
+      const minusDI = (100 * mS) / trS;
+      const denom = plusDI + minusDI;
+      dx[i] = denom > 0 ? (100 * Math.abs(plusDI - minusDI)) / denom : 0;
+    }
+  }
+  // ADX = Wilder-smoothed DX.
+  let adxVal = 0;
+  let count = 0;
+  for (let i = period; i < n; i++) {
+    if (Number.isNaN(dx[i])) continue;
+    count++;
+    if (count <= period) {
+      adxVal += dx[i];
+      if (count === period) out[i] = adxVal / period;
+    } else {
+      adxVal = (out[i - 1] as number) * (period - 1) + dx[i];
+      out[i] = adxVal / period;
+    }
+  }
+  return out;
+}
+
+/**
  * Supertrend direction (Olivier Seban). An ATR-band trend filter: returns `true`
  * when the market is in an uptrend (close above the trailing Supertrend line),
  * `false` otherwise. `period` = ATR length, `mult` = band width.

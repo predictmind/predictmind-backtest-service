@@ -96,6 +96,11 @@ dip-buying), we added four well-known families — see the candidate space:
   when it flips down (see the `supertrend` indicator).
 - **Donchian breakout** — buy a new N-candle high (trend/momentum).
 - **Momentum (ROC)** — buy when price rose enough over a lookback.
+- **EMA pullback (added later)** — the pros' most-cited high-win-rate active setup:
+  in an uptrend (fast EMA > slow EMA), buy a *mild* dip (RSI-14 moderately low) and
+  exit when momentum returns. It fires far more often than a deep RSI-2 dip, so it
+  trades more — but on our coins the frequent version tended to lose, confirming
+  that **selectivity, not frequency, is where the edge lives**.
 
 > **Honest footnote.** Connors RSI-2 is famous for ~90% win rates **on stocks, daily
 > bars**. On volatile crypto 4h it only managed ~55–65% and often lost — a good

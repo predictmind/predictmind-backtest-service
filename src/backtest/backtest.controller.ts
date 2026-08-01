@@ -6,6 +6,7 @@ import { BacktestService } from "./backtest.service";
 import {
   BenchmarkDto,
   GenerateDto,
+  LivePortfolioDto,
   OptimizeDto,
   PortfolioDto,
   RunBacktestDto,
@@ -87,6 +88,12 @@ export class BacktestController {
       minProfitFactor: dto.minProfitFactor,
       topN: dto.topN,
       objective: dto.objective,
+      regimeFilter: dto.regimeFilter,
+      trailingStopPct: dto.trailingStopPct,
+      maxHoldBars: dto.maxHoldBars,
+      cooldownBars: dto.cooldownBars,
+      stopLossPcts: dto.stopLossPcts,
+      takeProfitRRs: dto.takeProfitRRs,
     });
   }
 
@@ -119,6 +126,7 @@ export class BacktestController {
       minProfitFactor: dto.minProfitFactor,
       objective: dto.objective,
       robust: dto.robust,
+      minConsistency: dto.minConsistency,
       regimeFilter: dto.regimeFilter,
       trailingStopPct: dto.trailingStopPct,
       maxHoldBars: dto.maxHoldBars,
@@ -127,6 +135,21 @@ export class BacktestController {
       stopLossPcts: dto.stopLossPcts,
       takeProfitRRs: dto.takeProfitRRs,
     });
+  }
+
+  @Post("portfolio/live")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Live-style portfolio: shared capital-constrained balance across coins (trades lock funds)",
+  })
+  livePortfolio(@Body() dto: LivePortfolioDto) {
+    return this.generator.livePortfolio(
+      dto.dipCoins,
+      dto.breakoutCoins,
+      dto.timeframe,
+      dto.limit ?? 930,
+      { initialCapital: dto.initialCapital, allocFraction: dto.allocFraction },
+    );
   }
 
   @Get()

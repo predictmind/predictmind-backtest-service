@@ -11,6 +11,13 @@ import {
   WalkForwardOptimizeResult,
 } from "./trade-optimizer";
 import { PortfolioCoinInput, PortfolioResult, simulatePortfolio } from "./portfolio";
+import {
+  coinTrades,
+  LivePortfolioOptions,
+  LivePortfolioResult,
+  simulateLivePortfolio,
+  StrategyKind,
+} from "./live-portfolio";
 import { walkForward, WalkForwardOptions, WalkForwardResult } from "./walk-forward";
 
 @Injectable()
@@ -132,5 +139,40 @@ export class GeneratorService {
     }
     const result = simulatePortfolio(inputs, { allocFraction: options.allocFraction });
     return { timeframe, symbols, skipped, ...result };
+  }
+
+  /**
+   * Live-style portfolio: trade each coin with its assigned strategy on ONE
+   * shared, capital-constrained balance (a trade locks a fixed slice; no free
+   * cash = skip the signal). Answers "with ₹X, how does my balance actually
+   * grow when trades compete for the same funds?".
+   */
+  async livePortfolio(
+    dipCoins: string[],
+    breakoutCoins: string[],
+    timeframe: string,
+    limit = 930,
+    options: LivePortfolioOptions = {},
+  ): Promise<LivePortfolioResult & { timeframe: string }> {
+    const assigned: { symbol: string; kind: StrategyKind }[] = [
+      ...dipCoins.map((s) => ({ symbol: s.toUpperCase(), kind: "dip" as StrategyKind })),
+      ...breakoutCoins.map((s) => ({ symbol: s.toUpperCase(), kind: "breakout" as StrategyKind })),
+    ];
+
+    const allTrades: { symbol: string; kind: StrategyKind; entryMs: number; exitMs: number; pnlPct: number }[] = [];
+    const perCoin: { symbol: string; kind: StrategyKind; signals: number }[] = [];
+    for (const a of assigned) {
+      const candles = await this.market.getCandles(a.symbol, timeframe, limit);
+      if (candles.length < 250) {
+        perCoin.push({ symbol: a.symbol, kind: a.kind, signals: 0 });
+        continue;
+      }
+      const trades = coinTrades(candles, a.kind).map((t) => ({ ...t, symbol: a.symbol }));
+      perCoin.push({ symbol: a.symbol, kind: a.kind, signals: trades.length });
+      allTrades.push(...trades);
+    }
+
+    const sim = simulateLivePortfolio(allTrades, options);
+    return { timeframe, ...sim, perCoin };
   }
 }

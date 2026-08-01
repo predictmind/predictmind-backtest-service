@@ -90,6 +90,32 @@ if (subMetrics.profitFactor >= 1) profitableSubs++;
 A strategy that worked in 2021, 2022, **and** 2023 separately is far likelier to
 survive next year than one that only shone once. This is our anti-overfitting spine.
 
+## Break-even stop — a winner must never become a loss (added later)
+
+The most demoralising trade is one that was up nicely, then reversed and stopped you
+out for a loss. The **break-even stop** prevents it: once a trade is far enough in
+profit (a multiple of its initial risk, `breakEvenAtR`), we lift the stop up to the
+entry price. From then on the worst case is ~₹0, not a loss.
+
+```ts
+// once profit reaches breakEvenAtR × the initial risk, move the stop to entry
+if (options.breakEvenAtR != null && stopPrice < entryPrice &&
+    highSinceEntry >= entryPrice + options.breakEvenAtR * initialStopDistance) {
+  stopPrice = entryPrice; // break-even: this trade can no longer lose
+}
+```
+
+- **`breakEvenAtR: 1`** = when the trade is up by one "R" (one stop-distance), the
+  stop jumps to entry. It works *alongside* the trailing stop (we always use the
+  higher of the two), so you get early loss-protection **and** upside-riding.
+
+## ADX — only trade a *real* trend (added later)
+
+A breakout in a choppy, directionless market is a trap. **ADX** (Average Directional
+Index) measures trend *strength* (0-100): below ~20 = chop, above ~25 = a genuine
+trend. We added it as an optional entry gate (`adx > 22`), so trend strategies only
+fire when there's a real trend to ride — filtering out the sideways whipsaws.
+
 ## Position sizing (already in the engine)
 
 `riskPerTradePct` risks a fixed % of the account per trade, sizing the position from

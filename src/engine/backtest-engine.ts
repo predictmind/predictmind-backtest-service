@@ -36,6 +36,9 @@ export interface EngineOptions {
   maxHoldBars?: number;
   /** After an exit, wait this many candles before entering again (avoid whipsaw). */
   cooldownBars?: number;
+  /** Move the stop to break-even once profit reaches this multiple of the initial
+   *  risk (e.g. 1 = when up by one "R", a winner can no longer become a loss). */
+  breakEvenAtR?: number;
 }
 
 const DEFAULT_FEE = 0.001; // 0.1% per side, typical spot taker fee
@@ -61,6 +64,7 @@ export function runBacktest(
   let stopPrice: number | null = null;
   let takeProfitPrice: number | null = null;
   let highSinceEntry = 0; // peak price since entry (for the trailing stop)
+  let initialStopDistance = 0; // entry stop distance (for the break-even trigger)
   let lastExitIndex = -Infinity; // for the post-exit cooldown
 
   const trades: Trade[] = [];
@@ -86,6 +90,17 @@ export function runBacktest(
     //    profit, then the time-based max-hold exit.
     if (inPosition && i > entryIndex) {
       if (candle.high > highSinceEntry) highSinceEntry = candle.high;
+      // Break-even: once far enough in profit, lift the stop to entry so this
+      // trade can no longer turn into a loss.
+      if (
+        options.breakEvenAtR != null &&
+        stopPrice !== null &&
+        initialStopDistance > 0 &&
+        stopPrice < entryPrice &&
+        highSinceEntry >= entryPrice + options.breakEvenAtR * initialStopDistance
+      ) {
+        stopPrice = entryPrice;
+      }
       // Effective stop = the higher of the fixed stop and the trailing stop.
       let effStop = stopPrice;
       if (options.trailingStopPct != null && highSinceEntry > 0) {
@@ -132,6 +147,7 @@ export function runBacktest(
       entryTime = candle.openTime;
       entryIndex = i;
       highSinceEntry = price;
+      initialStopDistance = stopDistance ?? 0;
       stopPrice = stopDistance != null ? price - stopDistance : null;
       takeProfitPrice =
         stopDistance != null && options.takeProfitRR != null

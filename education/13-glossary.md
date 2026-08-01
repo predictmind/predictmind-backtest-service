@@ -102,5 +102,11 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Portfolio backtest** | Trade a basket of coins from one shared balance; diversification smooths the ride. |
 | **Look-ahead bias** | Peeking at future/test data when choosing a strategy — makes any backtest lie. |
 | **Holdout** | A block of recent data kept completely untouched during design, used only to judge honestly. |
+| **Break-even stop** | Once a trade is up by ~1× its risk, the stop moves to entry so a winner can't turn into a loss. |
+| **ADX** | Average Directional Index — measures trend *strength* (0-100); a filter to trade only genuine trends, not chop. |
+| **EMA pullback** | Buy a mild dip to a rising moving average within an uptrend (a frequent, trend-continuation entry). |
+| **Universe expansion** | Applying the same selective edge across many more coins to get more total trades without lowering quality. |
+| **Live portfolio (shared capital)** | Simulation where one balance funds all coins; each open trade locks a slice, freed when it closes; signals are skipped if cash runs out. |
+| **Allocation per trade** | The fixed slice of the balance committed to each trade (e.g. 10% = ₹1,000 of ₹10,000). |
 
 Back to the [index](README.md).

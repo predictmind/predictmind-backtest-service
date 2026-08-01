@@ -83,4 +83,44 @@ lists exactly which windows lost, so we can keep refining.
 > **If a result looks too good, assume we peeked — and go find where.**
 > Honesty in validation is worth more than any strategy.
 
+## Update — a wider universe + a live shared-capital simulator (added later)
+
+Two upgrades made the system genuinely tradeable.
+
+**1. A wider net (universe expansion).** Trading a *few* trades per coin per year is
+too little on 10 coins. So we imported **~40 liquid coins** and applied the two
+proven fixed strategies — **dip-buy** (Connors RSI-2 in an uptrend) and **breakout**
+(Donchian in an uptrend) — across all of them, keeping only the coins each *fits*:
+
+- **Dip-buy fits:** ETH, BNB, LTC, TRX.
+- **Breakout fits:** XLM, XRP, HBAR, MANA, VET, TRX, DOGE, SAND.
+- Together, **11 coins qualify** (up from 4), giving **~45 quality trades/year** —
+  a real cadence, without forcing more trades *per* coin (which we proved loses).
+- Lesson: don't trade one coin more often; trade the *same selective edge across
+  more coins*. That's how you get activity without giving up the edge.
+
+**2. A live, capital-constrained portfolio (`live-portfolio.ts`).** The earlier
+portfolio pooled trades loosely. The live simulator models **real money**: one
+shared balance, each open trade **locks a fixed slice** (e.g. ₹1,000 of ₹10,000), so
+free cash falls while trades are open and a new signal is **skipped if you can't
+afford it** — exactly like live trading.
+
+```ts
+events (entry/exit, time-ordered):
+  on entry: if (cash >= slice) { cash -= slice; open++ } else skip
+  on exit:  cash += slice * (1 + pnl%/100)   // slice + its profit/loss returns
+```
+
+Result on the 11-coin basket (₹10,000, ₹1,000/trade, out-of-sample):
+
+| Period | ₹10,000 becomes | Trades | Max open at once | Max drawdown |
+| --- | --- | --- | --- | --- |
+| Recent bear year | ₹10,202 (+2%) | 16 | 3 | 0.9% |
+| Bull+bear 2 years | ₹12,429 (+24%) | 86 | 8 | 5.1% |
+
+So ~**+12%/year across a full cycle** with a **~5% max drawdown**, and in a crash
+year it stays **safe and roughly flat** — never running out of cash (peak 8 of 10
+slots used). That's the honest, realistic profile: steady, protected, single-to-low-
+double-digit annual returns — not a fantasy.
+
 Next: the [glossary](13-glossary.md).

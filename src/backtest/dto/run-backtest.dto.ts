@@ -188,6 +188,86 @@ export class OptimizeDto {
   @IsOptional()
   @IsIn(OBJECTIVES as unknown as string[])
   objective?: (typeof OBJECTIVES)[number];
+
+  @ApiPropertyOptional({ description: "Only trade when market (BTC + coin) is in an uptrend" })
+  @IsOptional()
+  @IsBoolean()
+  regimeFilter?: boolean;
+
+  @ApiPropertyOptional({ description: "Trailing stop fraction (e.g. 0.08)" })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.005)
+  @Max(0.5)
+  trailingStopPct?: number;
+
+  @ApiPropertyOptional({ description: "Time-based exit after N candles" })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  maxHoldBars?: number;
+
+  @ApiPropertyOptional({ description: "Cooldown candles after an exit" })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  cooldownBars?: number;
+
+  @ApiPropertyOptional({ description: "Stop-loss widths to search (fractions)", type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  stopLossPcts?: number[];
+
+  @ApiPropertyOptional({ description: "Take-profit ratios (TP = RR x stop)", type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  takeProfitRRs?: number[];
+}
+
+export class LivePortfolioDto {
+  @ApiProperty({ description: "Coins traded with the dip-buy strategy", type: [String], example: ["ETH", "BNB", "LTC"] })
+  @IsArray()
+  @IsString({ each: true })
+  dipCoins!: string[];
+
+  @ApiProperty({ description: "Coins traded with the breakout strategy", type: [String], example: ["XLM", "XRP", "DOGE"] })
+  @IsArray()
+  @IsString({ each: true })
+  breakoutCoins!: string[];
+
+  @ApiProperty({ example: "1d" })
+  @IsString()
+  timeframe!: string;
+
+  @ApiPropertyOptional({ description: "Candles of the live period (incl. 200 warmup)", default: 930 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(250)
+  @Max(5000)
+  limit?: number;
+
+  @ApiPropertyOptional({ description: "Starting balance", default: 10000 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(1)
+  initialCapital?: number;
+
+  @ApiPropertyOptional({ description: "Fixed slice per trade = fraction of starting balance", default: 0.1 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0.02)
+  @Max(1)
+  allocFraction?: number;
 }
 
 export class PortfolioDto {
@@ -233,6 +313,14 @@ export class PortfolioDto {
   @IsOptional()
   @IsBoolean()
   robust?: boolean;
+
+  @ApiPropertyOptional({ description: "Train quality gate: keep coin only if config is this consistent across sub-periods (0-1)" })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  minConsistency?: number;
 
   @ApiPropertyOptional({ description: "Only trade when market (BTC + coin) is in an uptrend", default: false })
   @IsOptional()
@@ -409,10 +497,24 @@ export function toEngineOptions(risk?: Record<string, number>): {
   atrPeriod?: number;
   takeProfitRR?: number;
   riskPerTradePct?: number;
+  trailingStopPct?: number;
+  maxHoldBars?: number;
+  cooldownBars?: number;
+  breakEvenAtR?: number;
 } {
   if (!risk) return {};
   const out: Record<string, number> = {};
-  for (const key of ["stopLossPct", "atrMult", "atrPeriod", "takeProfitRR", "riskPerTradePct"]) {
+  for (const key of [
+    "stopLossPct",
+    "atrMult",
+    "atrPeriod",
+    "takeProfitRR",
+    "riskPerTradePct",
+    "trailingStopPct",
+    "maxHoldBars",
+    "cooldownBars",
+    "breakEvenAtR",
+  ]) {
     if (typeof risk[key] === "number") out[key] = risk[key];
   }
   return out;

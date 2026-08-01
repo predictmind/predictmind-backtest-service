@@ -52,10 +52,12 @@ export interface TradeOptimizeOptions {
   topN?: number;
   objective?: OptimizeObjective; // what to rank by (default winRate)
   robust?: boolean; // pick config consistent across many train sub-periods
+  minConsistency?: number; // train quality gate: keep coin only if this consistent (0-1)
   regimeFilter?: boolean; // only trade when the market (BTC + coin) is in an uptrend
   trailingStopPct?: number; // trailing stop applied to every config
   maxHoldBars?: number; // time-based exit applied to every config
   cooldownBars?: number; // post-exit cooldown applied to every config
+  breakEvenAtR?: number; // move stop to break-even at this profit multiple
 }
 
 /** Extra engine risk controls (beyond stop/TP) applied to every searched config. */
@@ -64,6 +66,7 @@ function extraEngineFrom(o: TradeOptimizeOptions): Partial<EngineOptions> {
   if (o.trailingStopPct != null) e.trailingStopPct = o.trailingStopPct;
   if (o.maxHoldBars != null) e.maxHoldBars = o.maxHoldBars;
   if (o.cooldownBars != null) e.cooldownBars = o.cooldownBars;
+  if (o.breakEvenAtR != null) e.breakEvenAtR = o.breakEvenAtR;
   return e;
 }
 
@@ -83,6 +86,7 @@ function selectRobustConfig(
   minTradesTotal: number,
   minProfitFactor: number,
   extraEngine: Partial<EngineOptions> = {},
+  minConsistency = 0,
 ): ScoredConfig | null {
   const K = 4;
   const subSize = Math.floor(train.length / K);
@@ -123,6 +127,10 @@ function selectRobustConfig(
       }
     }
   }
+  // Quality gate: only keep the coin if its best config was consistent enough
+  // across the train sub-periods (decided BEFORE the holdout — a principled
+  // "only trade coins the strategy clearly fits" rule).
+  if (bestConsistency < minConsistency) return null;
   return best;
 }
 
@@ -236,10 +244,11 @@ export function optimizeTrades(
   const train = candles.slice(0, split);
   const test = candles.slice(split);
 
-  const entries = buildEntryVariants();
+  const entries = withRegime(buildEntryVariants(), options.regimeFilter);
+  const extraEngine = extraEngineFrom(options);
 
   // 1) Search the grid on TRAIN (net-positive configs, ranked by the objective).
-  const scored = searchConfigs(train, timeframe, entries, stops, rrs, minTrades, minProfitFactor, objective);
+  const scored = searchConfigs(train, timeframe, entries, stops, rrs, minTrades, minProfitFactor, objective, extraEngine);
 
   // 2) Validate the shortlist out-of-sample; keep those that still trade enough
   //    and stay net positive, then rank by the HONEST out-of-sample objective.
@@ -470,7 +479,9 @@ export function bestConfigTestTrades(
   if (options.robust) {
     // Robustness-first: the config most consistently profitable across train
     // sub-periods (best generalisation).
-    const c = selectRobustConfig(train, timeframe, entries, stops, rrs, minTrades, minProfitFactor, extraEngine);
+    const c = selectRobustConfig(
+      train, timeframe, entries, stops, rrs, minTrades, minProfitFactor, extraEngine, options.minConsistency ?? 0,
+    );
     if (c) best = { c, t: evaluate(c.spec, test, timeframe, c.engine) };
   } else {
     const scored = searchConfigs(train, timeframe, entries, stops, rrs, minTrades, minProfitFactor, objective, extraEngine);
