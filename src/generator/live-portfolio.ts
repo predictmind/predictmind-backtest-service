@@ -76,6 +76,7 @@ export interface LivePortfolioOptions {
   initialCapital?: number;
   allocFraction?: number; // slice per trade = fraction of capital
   compound?: boolean; // if true, slice = fraction of CURRENT balance (reinvest profits)
+  endOffset?: number; // end the window this many candles before "now" (test an earlier period)
 }
 
 export interface LivePortfolioResult {

@@ -159,10 +159,14 @@ export class GeneratorService {
       ...breakoutCoins.map((s) => ({ symbol: s.toUpperCase(), kind: "breakout" as StrategyKind })),
     ];
 
+    const endOffset = options.endOffset ?? 0;
     const allTrades: { symbol: string; kind: StrategyKind; entryMs: number; exitMs: number; pnlPct: number }[] = [];
     const perCoin: { symbol: string; kind: StrategyKind; signals: number }[] = [];
     for (const a of assigned) {
-      const candles = await this.market.getCandles(a.symbol, timeframe, limit);
+      const fetched = await this.market.getCandles(a.symbol, timeframe, limit + endOffset);
+      // Optionally end the window earlier (drop the most recent `endOffset` candles)
+      // so we can replay a past period (e.g. a month during a past bull).
+      const candles = endOffset > 0 ? fetched.slice(0, Math.max(0, fetched.length - endOffset)) : fetched;
       if (candles.length < 250) {
         perCoin.push({ symbol: a.symbol, kind: a.kind, signals: 0 });
         continue;

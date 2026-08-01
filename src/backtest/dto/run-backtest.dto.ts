@@ -273,6 +273,14 @@ export class LivePortfolioDto {
   @IsOptional()
   @IsBoolean()
   compound?: boolean;
+
+  @ApiPropertyOptional({ description: "End the window this many candles before now (replay a past period)", default: 0 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(0)
+  @Max(3000)
+  endOffset?: number;
 }
 
 export class PortfolioDto {
