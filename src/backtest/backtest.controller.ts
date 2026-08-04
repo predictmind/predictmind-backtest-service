@@ -10,6 +10,7 @@ import {
   OptimizeDto,
   PortfolioDto,
   RunBacktestDto,
+  SignalDto,
   toEngineOptions,
   WalkForwardDto,
   WalkForwardOptimizeDto,
@@ -44,6 +45,20 @@ export class BacktestController {
   @ApiOperation({ summary: "Run all benchmark strategies and rank them (beat-the-field test)" })
   benchmark(@Body() dto: BenchmarkDto) {
     return this.backtest.benchmark(dto.symbol, dto.timeframe, dto.limit ?? 500);
+  }
+
+  @Post("signal")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Current live signal (BUY/SELL/HOLD) + price for a strategy — used by paper bots" })
+  signal(@Body() dto: SignalDto) {
+    return this.backtest.signal(
+      dto.symbol,
+      dto.timeframe,
+      dto.strategy,
+      dto.params ?? {},
+      dto.rules as unknown as RuleSpec | undefined,
+      dto.limit ?? 400,
+    );
   }
 
   @Post("generate")

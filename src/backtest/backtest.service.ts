@@ -75,6 +75,45 @@ export class BacktestService {
     };
   }
 
+  /**
+   * Evaluate a strategy on the LATEST candles and return only the most recent
+   * signal (BUY/SELL/HOLD) plus the last price/time. This is the live decision a
+   * paper-trading bot acts on each tick — no persistence, just "what now?".
+   */
+  async signal(
+    symbol: string,
+    timeframe: string,
+    strategyName: string,
+    params: Record<string, number> = {},
+    rules?: RuleSpec,
+    limit = 400,
+  ): Promise<{
+    symbol: string;
+    timeframe: string;
+    signal: string;
+    price: number;
+    time: Date;
+    candleCount: number;
+  }> {
+    const candles = await this.market.getCandles(symbol, timeframe, limit);
+    if (candles.length < 2) {
+      throw new NotFoundException(
+        `Not enough candles for ${symbol} ${timeframe} (got ${candles.length}).`,
+      );
+    }
+    const strategy = createStrategy(strategyName, params, rules);
+    const signals = strategy.generate(candles);
+    const last = candles.length - 1;
+    return {
+      symbol,
+      timeframe,
+      signal: signals[last] ?? "HOLD",
+      price: candles[last].close,
+      time: candles[last].openTime,
+      candleCount: candles.length,
+    };
+  }
+
   /** Run every benchmark strategy on the same data and rank them by net profit. */
   async benchmark(
     symbol: string,

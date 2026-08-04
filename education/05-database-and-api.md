@@ -87,4 +87,33 @@ methodology: instantly see whether an idea beats Buy & Hold and the rest.
 - `POST` returns `200 OK` (not `201`) because it's "run a computation," not "create
   a thing to hand back."
 
+## Update — the live "current signal" endpoint (added later)
+
+Later we added **`POST /backtests/signal`** for **live/paper trading**. A backtest
+replays a whole history; a *bot* trading live only needs one thing: **"given the
+latest candles, what does this strategy say to do right now?"**
+
+```ts
+// backtest.service.ts
+async signal(symbol, timeframe, strategyName, params, rules, limit = 400) {
+  const candles = await this.market.getCandles(symbol, timeframe, limit);
+  const strategy = createStrategy(strategyName, params, rules);
+  const signals = strategy.generate(candles);      // BUY/SELL/HOLD per candle
+  const last = candles.length - 1;
+  return { symbol, timeframe, signal: signals[last] ?? "HOLD",
+           price: candles[last].close, time: candles[last].openTime, candleCount: candles.length };
+}
+```
+
+- **What/why:** it reuses the *exact same* strategy engine as a backtest, then just
+  returns the **last** candle's signal plus the latest price. So a live bot and a
+  backtest can never disagree about what a strategy means — one source of truth.
+- **Who calls it:** the **paper service's strategy bot** (see the paper service's
+  education) polls this every minute and buys/sells on its virtual account
+  accordingly. That's how "test on the live market" is automated.
+- **Note on the endpoint table above:** the service has grown more POST endpoints
+  since (`/generate`, `/optimize`, `/optimize/walkforward`, `/portfolio`,
+  `/portfolio/live`, and now `/signal`). They all follow the same pattern: a
+  validated DTO in, a computed JSON result out, `200 OK`.
+
 Next: [running it and the real test](06-running-and-testing.md).

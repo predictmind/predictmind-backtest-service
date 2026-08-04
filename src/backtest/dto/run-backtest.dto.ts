@@ -92,6 +92,43 @@ export class BenchmarkDto {
   limit?: number;
 }
 
+/**
+ * Ask for the CURRENT signal of a strategy on the latest candles — used by the
+ * paper-trading "strategy bot" to decide whether to buy/sell right now. Same
+ * shape as a run, but it only returns the most recent BUY/SELL/HOLD + price.
+ */
+export class SignalDto {
+  @ApiProperty({ example: "SOL" })
+  @IsString()
+  symbol!: string;
+
+  @ApiProperty({ example: "15m" })
+  @IsString()
+  timeframe!: string;
+
+  @ApiProperty({ example: "rule", description: "Strategy name" })
+  @IsString()
+  strategy!: string;
+
+  @ApiPropertyOptional({ description: "Strategy params, e.g. { fast: 20, slow: 50 }" })
+  @IsOptional()
+  @IsObject()
+  params?: Record<string, number>;
+
+  @ApiPropertyOptional({ description: 'For "rule": the { entry, exit } spec' })
+  @IsOptional()
+  @IsObject()
+  rules?: Record<string, unknown>;
+
+  @ApiPropertyOptional({ description: "Candles to evaluate over (enough for the indicators)", default: 400 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(10)
+  @Max(15000)
+  limit?: number;
+}
+
 export class GenerateDto {
   @ApiProperty({ example: "BTC" })
   @IsString()
