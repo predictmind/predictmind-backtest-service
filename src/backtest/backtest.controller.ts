@@ -35,6 +35,7 @@ export class BacktestController {
       dto.limit ?? 500,
       dto.rules as unknown as RuleSpec | undefined,
       toEngineOptions(dto.risk),
+      dto.endOffset ?? 0,
     );
   }
 

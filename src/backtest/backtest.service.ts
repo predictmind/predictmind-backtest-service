@@ -38,9 +38,14 @@ export class BacktestService {
     limit = 500,
     rules?: RuleSpec,
     engine: EngineOptions = {},
+    endOffset = 0,
   ): Promise<BacktestSummary> {
     const strategy = createStrategy(strategyName, params, rules);
-    const candles = await this.market.getCandles(symbol, timeframe, limit);
+    const fetched = await this.market.getCandles(symbol, timeframe, limit + endOffset);
+    // Optionally end the window earlier (drop the most recent `endOffset` candles)
+    // so we can backtest a specific past period (e.g. one calendar month).
+    const candles =
+      endOffset > 0 ? fetched.slice(0, Math.max(0, fetched.length - endOffset)) : fetched;
     if (candles.length < 10) {
       throw new NotFoundException(
         `Not enough candles for ${symbol} ${timeframe} (got ${candles.length}); import more in the market service first.`,

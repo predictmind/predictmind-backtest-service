@@ -62,8 +62,16 @@ export class RunBacktestDto {
   @Transform(({ value }) => Number(value))
   @IsInt()
   @Min(10)
-  @Max(5000)
+  @Max(15000)
   limit?: number;
+
+  @ApiPropertyOptional({ description: "End the window this many candles before now (backtest a past period)", default: 0 })
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(0)
+  @Max(15000)
+  endOffset?: number;
 }
 
 export class BenchmarkDto {
