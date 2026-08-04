@@ -123,4 +123,5 @@ year it stays **safe and roughly flat** — never running out of cash (peak 8 of
 slots used). That's the honest, realistic profile: steady, protected, single-to-low-
 double-digit annual returns — not a fantasy.
 
-Next: the [glossary](13-glossary.md).
+Next: [expanded indicators + daily vs long strategies](13-expanded-indicators-daily-long.md),
+then the [glossary](14-glossary.md).

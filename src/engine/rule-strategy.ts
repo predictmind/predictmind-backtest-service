@@ -9,7 +9,18 @@
  * when flat, only sells when holding).
  */
 
-import { adx, bollinger, ema, macd, rsi, sma, stochasticK, supertrend } from "./indicators";
+import {
+  adx,
+  bollinger,
+  ema,
+  keltner,
+  macd,
+  rsi,
+  sma,
+  stochasticK,
+  supertrend,
+  vwap,
+} from "./indicators";
 import { detectPattern } from "./patterns";
 import { Candle, Signal, Strategy } from "./types";
 
@@ -30,6 +41,8 @@ export type Condition =
   | { type: "roc"; period?: number; op: Comparator; value: number }
   | { type: "supertrend"; period?: number; mult?: number; dir: "up" | "down" }
   | { type: "adx"; period?: number; op: Comparator; value: number }
+  | { type: "keltner"; period?: number; mult?: number; side: "below_lower" | "above_upper" }
+  | { type: "vwap"; period?: number; op: "gt" | "lt" }
   | { type: "mvrv"; op: Comparator; value: number }
   | { type: "active_addr_change"; period?: number; op: Comparator; value: number }
   | { type: "pattern"; name: string };
@@ -201,6 +214,27 @@ function conditionSeries(cond: Condition, candles: Candle[]): boolean[] {
       // Trend-strength filter: adx > 25 = strong trend, < 20 = chop.
       const a = adx(candles, cond.period ?? 14);
       return a.map((v) => (v != null ? compare(v, cond.op, cond.value) : false));
+    }
+    case "keltner": {
+      // Keltner channel (EMA ± mult×ATR). below_lower = stretched-down (bounce
+      // candidate); above_upper = strong breakout / overextended.
+      const kc = keltner(candles, cond.period ?? 20, cond.mult ?? 2);
+      return candles.map((c, i) => {
+        const upper = kc.upper[i];
+        const lower = kc.lower[i];
+        if (upper === null || lower === null) return false;
+        return cond.side === "below_lower" ? c.close < lower : c.close > upper;
+      });
+    }
+    case "vwap": {
+      // Rolling VWAP filter: price above VWAP = buyers in control (bullish);
+      // below = sellers in control (bearish). Used as a regime/confirmation gate.
+      const vw = vwap(candles, cond.period ?? 20);
+      return candles.map((c, i) => {
+        const v = vw[i];
+        if (v === null) return false;
+        return cond.op === "gt" ? c.close > v : c.close < v;
+      });
     }
     case "mvrv":
       // On-chain valuation (market cap / realized cap). High = lots of unrealised

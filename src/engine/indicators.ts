@@ -292,3 +292,71 @@ export function stochasticK(candles: Candle[], period = 14): (number | null)[] {
   }
   return out;
 }
+
+/**
+ * Rolling VWAP (Volume-Weighted Average Price) over the last `period` candles.
+ * Unlike a plain moving average, VWAP weights each candle's typical price
+ * (h+l+c)/3 by how much volume traded — so it tracks the price where most
+ * business actually happened. Traders treat price above VWAP as bullish (buyers
+ * in control) and below VWAP as bearish. A rolling window (not a session anchor)
+ * keeps it usable on any candle array without needing day boundaries.
+ */
+export function vwap(candles: Candle[], period = 20): (number | null)[] {
+  if (period <= 0) return candles.map(() => null);
+  const out: (number | null)[] = [];
+  let pvSum = 0; // sum of (typicalPrice * volume) over the window
+  let volSum = 0; // sum of volume over the window
+  const pv: number[] = [];
+  const vol: number[] = [];
+  for (let i = 0; i < candles.length; i++) {
+    const c = candles[i];
+    const typical = (c.high + c.low + c.close) / 3;
+    const v = c.volume > 0 ? c.volume : 0;
+    pv.push(typical * v);
+    vol.push(v);
+    pvSum += pv[i];
+    volSum += vol[i];
+    if (i >= period) {
+      pvSum -= pv[i - period];
+      volSum -= vol[i - period];
+    }
+    if (i >= period - 1) {
+      out.push(volSum > 0 ? pvSum / volSum : typical);
+    } else {
+      out.push(null);
+    }
+  }
+  return out;
+}
+
+/**
+ * Keltner Channels: a trend/volatility envelope. The middle line is an EMA of the
+ * close; the upper/lower bands sit `mult` × ATR above/below it. Similar in spirit
+ * to Bollinger Bands, but the bands are built from ATR (average true range)
+ * instead of standard deviation, so they react to real candle size rather than
+ * closing-price scatter. A close below the lower band = stretched-down (possible
+ * bounce); above the upper band = strong breakout/overextended.
+ */
+export function keltner(
+  candles: Candle[],
+  period = 20,
+  mult = 2,
+): { middle: (number | null)[]; upper: (number | null)[]; lower: (number | null)[] } {
+  const closes = candles.map((c) => c.close);
+  const middle = ema(closes, period);
+  const atrArr = atr(candles, period);
+  const upper: (number | null)[] = [];
+  const lower: (number | null)[] = [];
+  for (let i = 0; i < candles.length; i++) {
+    const m = middle[i];
+    const a = atrArr[i];
+    if (m === null || a === null) {
+      upper.push(null);
+      lower.push(null);
+      continue;
+    }
+    upper.push(m + mult * a);
+    lower.push(m - mult * a);
+  }
+  return { middle, upper, lower };
+}

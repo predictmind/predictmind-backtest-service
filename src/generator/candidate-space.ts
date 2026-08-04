@@ -43,6 +43,8 @@ function bases(): Base[] {
     [30, 70],
     [25, 75],
     [35, 65],
+    [20, 80],
+    [40, 60],
   ]) {
     out.push({
       label: `rsi_reversion(${low}/${high})`,
@@ -56,6 +58,8 @@ function bases(): Base[] {
     [9, 21],
     [12, 26],
     [20, 50],
+    [8, 34],
+    [13, 48],
   ]) {
     out.push({
       label: `ema_cross(${fast}/${slow})`,
@@ -81,11 +85,49 @@ function bases(): Base[] {
     exit: [{ type: "macd", op: "lt" }],
   });
 
-  // Bollinger mean-reversion.
+  // Bollinger mean-reversion (a few band widths — tighter bands fire more often).
+  for (const mult of [2, 2.5]) {
+    out.push({
+      label: `bollinger_reversion(${mult})`,
+      entry: [{ type: "bollinger", period: 20, mult, side: "below_lower" }],
+      exit: [{ type: "bollinger", period: 20, mult, side: "above_upper" }],
+    });
+  }
+
+  // Keltner channel mean-reversion: buy a close below the lower ATR band (price
+  // stretched down), exit above the upper band. ATR-based bands react to real
+  // candle size, so they behave differently from Bollinger's std-dev bands.
+  for (const mult of [2, 1.5]) {
+    out.push({
+      label: `keltner_reversion(${mult})`,
+      entry: [{ type: "keltner", period: 20, mult, side: "below_lower" }],
+      exit: [{ type: "keltner", period: 20, mult, side: "above_upper" }],
+    });
+  }
+
+  // Stochastic %K mean-reversion: buy deeply oversold (%K low), exit overbought.
+  // A classic oscillator distinct from RSI — measures where the close sits in the
+  // recent high-low range rather than average gain/loss.
+  for (const [low, high] of [
+    [20, 80],
+    [15, 85],
+  ]) {
+    out.push({
+      label: `stoch_reversion(${low}/${high})`,
+      entry: [{ type: "indicator", name: "stoch_k", period: 14, op: "lt", value: low }],
+      exit: [{ type: "indicator", name: "stoch_k", period: 14, op: "gt", value: high }],
+    });
+  }
+
+  // Stochastic dip inside an uptrend (high-win-rate variant): oversold %K but
+  // only while EMA20 > EMA50, so we buy dips within strength (not falling knives).
   out.push({
-    label: "bollinger_reversion",
-    entry: [{ type: "bollinger", period: 20, mult: 2, side: "below_lower" }],
-    exit: [{ type: "bollinger", period: 20, mult: 2, side: "above_upper" }],
+    label: "stoch_pullback(20,ema20>50)",
+    entry: [
+      { type: "indicator", name: "stoch_k", period: 14, op: "lt", value: 25 },
+      { type: "ma", kind: "ema", fast: 20, slow: 50, op: "gt" },
+    ],
+    exit: [{ type: "indicator", name: "stoch_k", period: 14, op: "gt", value: 75 }],
   });
 
   // Donchian breakouts (trend-following): buy new highs, exit on new lows. These
@@ -170,6 +212,8 @@ function gates(): { label: string; cond: Condition | null }[] {
     { label: "self_up", cond: { type: "ma", kind: "ema", fast: 20, slow: 50, op: "gt" } },
     // Regime: BTC (the market leader) is above its 50-period MA.
     { label: "btc_up", cond: { type: "btc_trend", period: 50, dir: "above" } },
+    // Regime: price above rolling VWAP (buyers in control over the last 20 bars).
+    { label: "above_vwap", cond: { type: "vwap", period: 20, op: "gt" } },
     // Confirmation: aggressive buying (taker buy volume share).
     { label: "buy_pressure", cond: { type: "order_flow", period: 3, op: "gt", value: 0.52 } },
     // Confirmation: market in fear (contrarian entry).

@@ -46,6 +46,7 @@ These notes are your textbook. Read in order; each explains **what** the code do
 | 10 | [10-trade-quality-optimizer.md](10-trade-quality-optimizer.md) | Tuning win rate with take-profit/stop-loss; objectives; new strategy families (Connors, Supertrend, breakout, momentum) |
 | 11 | [11-risk-controls-and-regime.md](11-risk-controls-and-regime.md) | The market-flow regime filter (skip downtrends), trailing stop, time-exit, cooldown, robustness selection |
 | 12 | [12-portfolio-and-honest-validation.md](12-portfolio-and-honest-validation.md) | Trading a basket together, the look-ahead bias we caught, and the honest ₹10,000 holdout results |
-| 13 | [13-glossary.md](13-glossary.md) | Dictionary of every backtesting word |
+| 13 | [13-expanded-indicators-daily-long.md](13-expanded-indicators-daily-long.md) | New indicators (VWAP, Keltner, Stochastic) and building two SOL strategies: a DAILY (15m) and a LONG (1d) one |
+| 14 | [14-glossary.md](14-glossary.md) | Dictionary of every backtesting word |
 
 Start with [01-what-is-backtesting.md](01-what-is-backtesting.md). 🚀

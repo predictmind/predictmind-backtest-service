@@ -1,4 +1,4 @@
-# 13. Glossary (the dictionary)
+# 14. Glossary (the dictionary)
 
 Backtesting words used in these notes. General coding words (server, API, database,
 Prisma, module, controller, service, DTO, decorator, Docker, port, CI, east-west
@@ -108,5 +108,11 @@ call, fetch, timeout) are defined in the auth, market, and news glossaries:
 | **Universe expansion** | Applying the same selective edge across many more coins to get more total trades without lowering quality. |
 | **Live portfolio (shared capital)** | Simulation where one balance funds all coins; each open trade locks a slice, freed when it closes; signals are skipped if cash runs out. |
 | **Allocation per trade** | The fixed slice of the balance committed to each trade (e.g. 10% = ₹1,000 of ₹10,000). |
+| **VWAP** | Volume-Weighted Average Price — the average price weighted by how much volume traded there; price above it = buyers in control. |
+| **Rolling VWAP** | VWAP over the last N candles (a moving window) rather than anchored to a day/session — usable on any candle array. |
+| **Keltner Channel** | An EMA with bands set a multiple of ATR above/below it — like Bollinger Bands but volatility comes from ATR, not standard deviation. |
+| **Stochastic reversion** | Buy when Stochastic %K is very low (oversold), sell when very high (overbought) — an oscillator mean-reversion, cousin of RSI reversion. |
+| **Daily strategy** | A short-timeframe (15m/1h) setup that aims to trade roughly every day, banking many small, tightly-stopped gains. |
+| **Long / swing strategy** | A higher-timeframe (1d) setup that holds days-to-weeks to catch the big trends, accepting a lower win rate for much larger winners. |
 
 Back to the [index](README.md).
