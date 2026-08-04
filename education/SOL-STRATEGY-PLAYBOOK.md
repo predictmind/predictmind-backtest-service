@@ -198,5 +198,110 @@ cash flow, and the SWING strategy in the background for the occasional big payda
 
 ---
 
+## Using these strategies on OTHER coins (we tested this)
+
+You asked a smart question: can we run these same plans on other coins to make more
+money? We tested it. The two strategies behave **very differently** when moved to
+other coins.
+
+### SWING travels well — use it on a basket of coins ✅
+
+We ran the **exact same SWING rule** (new 100-day high + Bitcoin healthy + 25%
+trailing stop) — with **no changes** — on 22 major coins over their full history
+(₹10,000 each). It made money on **8 of them**:
+
+| Coin | Strategy profit | Just holding the coin | Profit factor |
+|---|---|---|---|
+| SOL | **+257%** | +2,150% | 6.85 |
+| NEAR | **+94%** | **−49%** | 3.08 |
+| ADA | **+44%** | **−55%** | 2.00 |
+| AVAX | **+39%** | **−49%** | 2.11 |
+| ICP | **+34%** | **−99%** | 2.56 |
+| BTC | **+31%** | +90% | 2.13 |
+| BNB | **+24%** | +1,294% | 1.91 |
+| XLM | **+23%** | **−57%** | 1.66 |
+
+Look at the middle column. On **NEAR, ADA, AVAX, ICP, XLM**, just holding the coin
+would have **lost you 49% to 99%** — but the SWING strategy **made money** on them.
+That's the whole point: it grabs the big run and then gets out before the crash. On
+coins that only ever went up (BTC, BNB), plain holding won — but you'd have suffered
+huge drops on the way.
+
+**On the other 14 coins the same rule lost money** (examples: LTC −70%, UNI −74%, DOT
+−38%, RUNE −55%). So the plan is: **only run SWING on the coins it actually fits.**
+Our best basket: **SOL, NEAR, ADA, AVAX, ICP, BTC, BNB, XLM.**
+
+> By running SWING across these 8 coins instead of only SOL, you get **more chances**
+> to catch a big run — while the healthy-Bitcoin filter still pulls you all to cash
+> together when the whole market turns down.
+
+### SWING profit by recent periods (it's lumpy — like investing)
+
+You wanted to see it "by months/years," not one 5-year number. Here's what ₹10,000
+became over the **last 1, 2, and 3 years** (a trade may last months, so we measure in
+years):
+
+| Coin | Last 12 months | Last 24 months | Last 36 months |
+|---|---|---|---|
+| SOL | ₹10,000 (0 trades) | ₹9,771 (−2%) | **₹28,934 (+189%)** |
+| NEAR | ₹13,949 (+39%) | ₹11,407 (+14%) | ₹26,559 (+166%) |
+| ADA | ₹10,000 (0 trades) | ₹18,687 (+87%) | ₹24,464 (+145%) |
+| AVAX | ₹10,000 (0 trades) | ₹12,022 (+20%) | ₹26,907 (+169%) |
+| BTC | ₹10,000 (0 trades) | ₹12,363 (+24%) | ₹20,330 (+103%) |
+| XLM | ₹8,406 (−16%) | ₹20,037 (+100%) | ₹16,724 (+67%) |
+
+**The big lesson here:** in the **last 12 months** the strategy hardly traded at all —
+several coins had **0 trades** because no valid breakout appeared while Bitcoin was
+healthy. It just sat safely in cash. Most of the profit came in the **2-to-3-year**
+windows that contained the big 2024–2025 run.
+
+So SWING is **not steady monthly income.** It's more like **patient investing**: quiet
+for long stretches (sometimes a whole year with no trade), then a big payoff when a
+real bull move finally comes. If you want money moving every month, that's the DAILY
+strategy's job, not this one.
+
+### DAILY does NOT travel — it's SOL-only for now ❌
+
+We imported 15-minute data for BTC, ETH, BNB, XRP, ADA, AVAX, DOGE, LINK and NEAR and
+ran the **exact same DAILY rule** on each (recent ~24-day window). Result:
+
+| Coin | DAILY profit |
+|---|---|
+| **SOL** | **+4.0%** (78% win) ✅ |
+| XRP | −1.8% |
+| NEAR | −3.3% |
+| BNB | −5.4% |
+| ADA | −5.6% |
+| LINK | −6.3% |
+| BTC | −7.4% |
+| ETH | −8.9% |
+| DOGE | −10.2% |
+| AVAX | −13.5% |
+
+**Only SOL made money.** The DAILY settings (the RSI levels, the 3% trailing, the 2%
+stop) are tuned to how *SOL* wiggles on the 15-minute chart. Other coins wiggle
+differently, so the same numbers lose. This is the honest truth: **the DAILY strategy
+is a SOL specialist, not a one-size-fits-all plan.**
+
+To make a DAILY strategy work on another coin we would need to:
+1. Import **much deeper** 15-minute history for that coin (we only had ~24 days —
+   too little to trust), and
+2. **Re-tune** its settings for that specific coin (its own RSI levels, stop, target),
+   then test it forward.
+
+That's a real, doable follow-up — just say the word and I'll build a per-coin DAILY
+tuner. But I won't pretend the current SOL settings work elsewhere, because the test
+says they don't.
+
+### Bottom line
+
+- **SWING:** run it on a **basket** — SOL, NEAR, ADA, AVAX, ICP, BTC, BNB, XLM. More
+  coins = more shots at a big run, with built-in crash protection. Expect **lumpy,
+  investment-style** returns (quiet years, then big years).
+- **DAILY:** keep it on **SOL only** for now. Extending it to other coins needs deeper
+  data and per-coin tuning — a separate project.
+
+---
+
 *Back to the [education index](README.md). For the technical/code version of this, see
 [step 13](13-expanded-indicators-daily-long.md).*
