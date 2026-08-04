@@ -155,6 +155,7 @@ export class BacktestController {
         compound: dto.compound,
         endOffset: dto.endOffset,
       },
+      dto.swingCoins ?? [],
     );
   }
 

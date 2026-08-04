@@ -123,5 +123,38 @@ year it stays **safe and roughly flat** — never running out of cash (peak 8 of
 slots used). That's the honest, realistic profile: steady, protected, single-to-low-
 double-digit annual returns — not a fantasy.
 
+## Update — a third strategy kind: `swing` (added later)
+
+The live portfolio started with two coin "kinds": `dip` (Connors RSI-2) and
+`breakout` (a short 20-day Donchian). When we finalised the **SWING** strategy
+(a fresh **100-day** high + Bitcoin healthy + a wide **25% trailing stop**), we
+wanted to run *that exact* plan as a shared-capital basket too. So we added a third
+kind, `swing`, in `src/generator/live-portfolio.ts`:
+
+```ts
+const SWING_SPEC: RuleSpec = {
+  entry: { mode: "all", conditions: [
+    { type: "breakout", period: 100, dir: "up" },   // new 100-day high
+    { type: "btc_trend", period: 100, dir: "above" }, // BTC above its 100-day MA
+  ] },
+  exit: { mode: "any", conditions: [{ type: "breakout", period: 50, dir: "down" }] },
+};
+const SWING_RISK: EngineOptions = { trailingStopPct: 0.25 }; // ride winners, 25% trail
+```
+
+- **What/why:** `breakout` (period 20, 12% trail) is a *shorter* swing; the new
+  `swing` kind matches our documented big-run catcher exactly, so the portfolio
+  numbers line up with the single-coin backtests.
+- **How it's wired:** `strategyFor("swing")` returns this spec+risk; the service's
+  `livePortfolio` gained a `swingCoins` list, and the API a `swingCoins` field — all
+  **additive**, so the old `dipCoins`/`breakoutCoins` behaviour is unchanged.
+
+We then ran the 8 SWING-fit coins (SOL, NEAR, ADA, AVAX, ICP, BTC, BNB, XLM) as one
+₹10,000 pot. Best result: **20% slices + compounding → +58% over ~5.5 years, 42%
+max drop.** Two honest lessons fell out: spreading across coins **dilutes** the big
+SOL winner (so it made less than SOL alone), and betting **bigger** per trade
+*backfired* (trades ran out of shared cash and skipped the winners). The full
+plain-English write-up is in the **[SOL Strategy Playbook](SOL-STRATEGY-PLAYBOOK.md)**.
+
 Next: [expanded indicators + daily vs long strategies](13-expanded-indicators-daily-long.md),
 then the [glossary](14-glossary.md).

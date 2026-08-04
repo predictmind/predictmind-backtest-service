@@ -153,10 +153,12 @@ export class GeneratorService {
     timeframe: string,
     limit = 930,
     options: LivePortfolioOptions = {},
+    swingCoins: string[] = [],
   ): Promise<LivePortfolioResult & { timeframe: string }> {
     const assigned: { symbol: string; kind: StrategyKind }[] = [
       ...dipCoins.map((s) => ({ symbol: s.toUpperCase(), kind: "dip" as StrategyKind })),
       ...breakoutCoins.map((s) => ({ symbol: s.toUpperCase(), kind: "breakout" as StrategyKind })),
+      ...swingCoins.map((s) => ({ symbol: s.toUpperCase(), kind: "swing" as StrategyKind })),
     ];
 
     const endOffset = options.endOffset ?? 0;

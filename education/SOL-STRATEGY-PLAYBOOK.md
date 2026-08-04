@@ -303,5 +303,91 @@ says they don't.
 
 ---
 
+## Update: deeper testing — "how many coins work for each?"
+
+You asked two direct questions: build a proper **per-coin tuner for the DAILY
+strategy**, and run the **SWING basket as one shared money pot**. We did both. Here
+are the honest answers.
+
+### DAILY strategy: how many coins? → **0 (zero), even after tuning** ❌
+
+We imported ~83 days of 15-minute data for 10 big coins and built a real **tuner**:
+for each coin it tried several DAILY setting combinations on an **older "training"
+slice**, picked the best, then judged it on a **recent slice it had never seen**
+(the honest test). Out-of-sample results:
+
+| Coin | Test profit | Win rate |
+|---|---|---|
+| SOL | −1.5% | 66.7% |
+| NEAR | −4.0% | 47% |
+| XRP | −6.2% | 56% |
+| BTC | −7.9% | 55% |
+| LINK | −8.3% | 54% |
+| BNB | −9.9% | 50% |
+| ETH | −9.9% | 50% |
+| ADA | −10.3% | 44% |
+| DOGE | −12.2% | 47% |
+| AVAX | −20.6% | 33% |
+
+**Every single coin lost money on the fresh test slice** — including SOL. This is a
+big, honest correction to the earlier "+13.8% on SOL" number: that came from one
+*particular calm ~52-day window*. On the most recent ~36 days (a choppy/bearish
+stretch) the same idea loses on **all** coins, and tuning the settings did **not**
+save it.
+
+**Why:** the DAILY strategy is short-term dip-buying. It works in calm uptrends and
+gets chopped to pieces in sideways/falling markets. It's **regime-dependent**, not a
+dependable everyday income machine. So the honest verdict: **do not run DAILY as a
+standalone money-maker on any coin right now.** It needs a live "only trade when the
+market is calm and rising" switch, and even then it's fragile.
+
+### SWING strategy: how many coins? → **8 coins** ✅
+
+Individually profitable (full history, same fixed rule): **SOL, NEAR, ADA, AVAX, ICP,
+BTC, BNB, XLM.** (14 other coins we tried lost — we simply don't trade those.)
+
+Then we ran all 8 together as **one shared ₹10,000 account** (a trade locks a slice
+of cash; if cash runs out, the signal is skipped — exactly like real life). Over
+~5.5 years:
+
+| Slice per trade | Reinvest profits? | ₹10,000 becomes | Worst drop |
+|---|---|---|---|
+| 20% | no | ₹13,323 (+33%) | 48% |
+| **20%** | **yes** | **₹15,840 (+58%)** | **42%** |
+| 25% | yes | ₹12,690 (+27%) | 53% |
+| 40% | yes | ₹7,699 (−23%) | 61% |
+| 50% | yes | ₹6,390 (−36%) | 72% |
+
+**Best: 20% slices with profits reinvested → +58% over ~5.5 years (~8.6% a year),
+worst drop 42%.**
+
+Two honest surprises here:
+
+1. **Spreading over 8 coins made LESS than just holding SOL alone (+256%).** Why?
+   With a fixed 20% slice, the giant SOL winner only applied to one-fifth of the
+   account. Diversifying **dilutes** your big winners.
+2. **Betting bigger (40–50% slices) made it much WORSE (−23%, −36%).** With big
+   slices you can only hold ~2 trades at once, so 28–33 good signals got **skipped
+   for lack of cash** — and you end up missing the very winners that matter. Trying
+   to concentrate *backfired*.
+3. **Diversifying barely reduced the drop** (still ~42%). Crypto coins are **highly
+   correlated** — they pump together and crash together — so 8 coins don't cushion
+   each other the way stocks from different industries would.
+
+### Bottom-line count
+
+| Strategy | Coins that work | Honest status |
+|---|---|---|
+| **DAILY** (15-min) | **0** out-of-sample | Fragile, regime-dependent. Not reliable across coins right now. |
+| **SWING** (1-day) | **8** (SOL, NEAR, ADA, AVAX, ICP, BTC, BNB, XLM) | Robust. Best as an 8-coin pot: ~+58% over 5.5y, or concentrated on SOL for higher-but-riskier returns. |
+
+**Practical takeaway:** SWING is the strategy to trust and spread across those 8
+coins. DAILY should stay experimental — it only pays in calm, rising markets, so
+we'd need a market-condition switch before relying on it. To grow the DAILY side we
+also need **much more 15-minute history** (we only had ~83 days) to tune and trust
+it.
+
+---
+
 *Back to the [education index](README.md). For the technical/code version of this, see
 [step 13](13-expanded-indicators-daily-long.md).*

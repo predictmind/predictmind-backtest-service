@@ -16,7 +16,7 @@ import { EngineOptions, runBacktest } from "../engine/backtest-engine";
 import { Condition, RuleSpec, RuleStrategy } from "../engine/rule-strategy";
 import { Candle } from "../engine/types";
 
-export type StrategyKind = "dip" | "breakout";
+export type StrategyKind = "dip" | "breakout" | "swing";
 
 // The two proven strategies, matched to coin character.
 const DIP_SPEC: RuleSpec = {
@@ -60,8 +60,27 @@ const BREAKOUT_RISK: EngineOptions = {
   breakEvenAtR: 1,
 };
 
+// The SWING strategy (our big-run catcher): a fresh 100-day high while BTC is
+// above its own 100-day average, then ride it with a wide 25% trailing stop so a
+// real trend can run for weeks/months. Distinct from the shorter `breakout` above.
+const SWING_SPEC: RuleSpec = {
+  entry: {
+    mode: "all",
+    conditions: [
+      { type: "breakout", period: 100, dir: "up" },
+      { type: "btc_trend", period: 100, dir: "above" },
+    ] as Condition[],
+  },
+  exit: { mode: "any", conditions: [{ type: "breakout", period: 50, dir: "down" }] },
+};
+const SWING_RISK: EngineOptions = {
+  trailingStopPct: 0.25,
+};
+
 export function strategyFor(kind: StrategyKind): { spec: RuleSpec; risk: EngineOptions } {
-  return kind === "dip" ? { spec: DIP_SPEC, risk: DIP_RISK } : { spec: BREAKOUT_SPEC, risk: BREAKOUT_RISK };
+  if (kind === "dip") return { spec: DIP_SPEC, risk: DIP_RISK };
+  if (kind === "swing") return { spec: SWING_SPEC, risk: SWING_RISK };
+  return { spec: BREAKOUT_SPEC, risk: BREAKOUT_RISK };
 }
 
 interface SimTrade {

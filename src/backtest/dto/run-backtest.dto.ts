@@ -250,6 +250,16 @@ export class LivePortfolioDto {
   @IsString({ each: true })
   breakoutCoins!: string[];
 
+  @ApiPropertyOptional({
+    description: "Coins traded with the SWING strategy (100-day breakout + BTC regime + 25% trailing)",
+    type: [String],
+    example: ["SOL", "NEAR", "ADA"],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  swingCoins?: string[];
+
   @ApiProperty({ example: "1d" })
   @IsString()
   timeframe!: string;
