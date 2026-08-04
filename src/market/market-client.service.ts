@@ -209,7 +209,12 @@ export class MarketClientService {
       for (const candle of candles) candle.btcClose = candle.close;
       return;
     }
-    const url = `${this.baseUrl()}/api/v1/market/candles?symbol=BTC&timeframe=${encodeURIComponent(timeframe)}&limit=2000`;
+    // Fetch BTC to at least the depth of the coin's candles (plus a small buffer
+    // so the alignment has a BTC point at/before the very first coin candle).
+    // A previous hardcoded 2000 left btcClose null on long intraday windows
+    // (e.g. thousands of 15m candles), silently disabling every BTC-regime gate.
+    const btcLimit = Math.min(Math.max(candles.length + 50, 2000), 15000);
+    const url = `${this.baseUrl()}/api/v1/market/candles?symbol=BTC&timeframe=${encodeURIComponent(timeframe)}&limit=${btcLimit}`;
     await this.attachSeries(
       url,
       candles,

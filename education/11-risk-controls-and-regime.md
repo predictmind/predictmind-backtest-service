@@ -135,4 +135,33 @@ result from **−13% → −5%**, cut the worst drawdown from **17% → 5%**, an
 several coins genuinely profitable (ETH +28%, BNB +22%). Protection first, profit
 second.
 
+## A bug that silently disabled the regime filter on intraday windows (added later)
+
+The regime filter reads `btcClose` — Bitcoin's price copied onto each candle by
+`attachBtcContext` in `src/market/market-client.service.ts`. For an alt-coin it fetches
+BTC's candles and lines them up by time. The problem: it fetched a **hardcoded 2000**
+BTC candles, no matter how many coin candles we asked for.
+
+- On the **1-day** chart that was fine — we rarely ask for more than 2000 days.
+- On the **15-minute** chart it broke silently: asking for 3000–8000 coin candles but
+  only 2000 BTC candles meant most candles got **no** `btcClose`, so `btc_trend` was
+  *always false* → the BTC regime gate blocked **every** trade (0 trades), which looked
+  like "the market was bad the whole time" but was really just missing data.
+
+The fix: fetch BTC to **at least the depth of the coin's candles**:
+
+```ts
+const btcLimit = Math.min(Math.max(candles.length + 50, 2000), 15000);
+// ...&symbol=BTC&timeframe=...&limit=${btcLimit}
+```
+
+- **What/why:** the `+50` buffer guarantees a BTC point at/before the very first coin
+  candle; the `2000` floor keeps old behaviour for short requests; the `15000` cap
+  matches the engine's max window.
+- **Lesson:** a "best-effort, leave-it-null" helper can hide a bug — a filter that
+  quietly does nothing looks exactly like a filter that's working perfectly and finding
+  nothing. When a regime gate returns *zero* trades over a long window, suspect missing
+  data before believing the market was simply bad. (This is why we always sanity-check
+  a single always-checkable condition in isolation.)
+
 Next: putting coins together and validating honestly — [12-portfolio-and-honest-validation.md](12-portfolio-and-honest-validation.md).

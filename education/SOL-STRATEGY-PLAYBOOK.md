@@ -387,6 +387,34 @@ we'd need a market-condition switch before relying on it. To grow the DAILY side
 also need **much more 15-minute history** (we only had ~83 days) to tune and trust
 it.
 
+### We tested your idea: "only trade when conditions are right" 🧪
+
+You suggested the DAILY strategy should **skip trading when conditions aren't met** —
+exactly the right instinct, and it's what makes SWING work. So we tested the strongest
+version of that: **only buy SOL when Bitcoin itself is healthy** (BTC above its
+multi-day average). (Fixing this even required a real code bug: Bitcoin's price wasn't
+being attached to the 15-minute candles, so the filter had silently been doing nothing
+— now fixed.)
+
+The honest result: **the market-condition filter did NOT rescue the DAILY strategy.**
+On the recent test window, adding "only when Bitcoin is healthy" barely changed
+anything — SOL stayed flat, ETH improved a little, BTC and NEAR got slightly *worse* —
+and every coin still ended negative.
+
+**Why it didn't help:** during that recent window Bitcoin was usually above its short
+average *when the dips happened*, so the filter rarely blocked a trade. The losses
+weren't from an obvious downtrend — they were from **choppiness**: on the 15-minute
+chart, small dips kept bouncing just enough to trip the stop-loss before recovering.
+The DAILY win rate is fine (~60–67% on SOL), but the small wins barely outweigh the
+stops, so after fees it's roughly break-even out-of-sample.
+
+**What this means:** your instinct (don't trade in bad conditions) is correct and is
+already the backbone of SWING. But for *short-term 15-minute* trading, no simple
+"skip" rule we tried reliably tells us in advance which calm periods will pay. The
+edge there is just too thin to trust yet. So the honest plan stands: **rely on SWING
+(8 coins); keep DAILY experimental** until we have far more 15-minute history and a
+proven calm-market detector.
+
 ---
 
 *Back to the [education index](README.md). For the technical/code version of this, see
