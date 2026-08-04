@@ -9,6 +9,10 @@ good.
 These notes are your textbook. Read in order; each explains **what** the code does,
 **how** to write it, **why** we did it this way, and what **other options** exist.
 
+> 📘 **Want the plain-English "how do we trade SOL" guide** (exact buy/sell points,
+> settings, and what ₹10,000 becomes)? See the
+> **[SOL Strategy Playbook](SOL-STRATEGY-PLAYBOOK.md)** — no coding needed to read it.
+
 > New to *server, API, database, Prisma, module, DTO, Docker*? The auth and market
 > service notes teach those. This folder focuses on **backtesting**.
 
